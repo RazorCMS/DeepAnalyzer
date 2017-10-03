@@ -1,8 +1,8 @@
 #common definitions go in here
 SHELL = /bin/sh
 CXX           = g++
-CXXFLAGS      = -O -Wall -fPIC -g -ansi -Wextra
-CXX11FLAGS    = -std=c++0x
+CXXFLAGS      = -O -Wextra -fPIC -g -Wall 
+CXX11FLAGS    = -std=c++11
 CXX14FLAGS    = -std=c++14
 LD            = g++
 LDFLAGS       = -O

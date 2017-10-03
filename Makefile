@@ -15,7 +15,7 @@ RUNNERSCC = $(addsuffix .cc,$(addprefix $(ANADIR),$(notdir RUNNERS)))
 UTILS = $(SRCDIR)/JetCorrectorParameters.cc $(SRCDIR)/SimpleJetCorrectionUncertainty.cc  $(SRCDIR)/JetCorrectionUncertainty.cc $(SRCDIR)/SimpleJetCorrector.cc $(SRCDIR)/FactorizedJetCorrector.cc $(SRCDIR)/SimpleJetResolution.cc $(SRCDIR)/BTagCalibrationStandalone.cc $(SRCDIR)/EnergyScaleCorrection_class.cc $(SRCDIR)/Hemisphere.cc $(SRCDIR)/Davismt2.cc $(SRCDIR)/RazorHelper.cc
 UTILSOBJ = $(UTILS:cc=o)
 EXECUTABLES = NormalizeNtuple SkimNtuple $(RUNNERS)
-#HELPERSCRIPT = python/MakeAnalyzerCode.py
+HELPERSCRIPT = python/MakeAnalyzerCode.py
 
 .PHONY: clean all lxplus 
 
@@ -46,11 +46,11 @@ $(UTILSOBJ): %.o: %.cc
 $(ANALYZERSOBJ): $(ANADIR)/%.o: $(ANADIR)/%.cc $(ANADIR)/%.h
 	$(CXX) -c $(CXXFLAGS) -I$(INCLUDEDIR) -I$(ANADIR) $(LDFLAGS) $(LIBS) -o $@ $(CXX14FLAGS) $<
 
-#$(ANALYZERSH): 
-#	$(HELPERSCRIPT) $(notdir $(basename $@))
+$(ANALYZERSH): 
+	$(HELPERSCRIPT) $(notdir $(basename $@))
 
-#$(RUNNERSCC): 
-#	$(HELPERSCRIPT) $(notdir $(basename $($@:Run=)))
+$(RUNNERSCC): 
+	$(HELPERSCRIPT) $(notdir $(basename $($@:Run=)))
 
 $(RUNNERS): $(BINDIR)/Run%: $(SRCDIR)/RazorEvents.o  $(SRCDIR)/RazorAnalyzer.o  $(UTILSOBJ) $(ANADIR)/%.o $(SRCDIR)/Run%.cc
 	$(CXX) $^ $(CXXFLAGS) -I$(INCLUDEDIR) -I$(ANADIR) $(LDFLAGS) $(LIBS) -o $@ $(CXX14FLAGS) 

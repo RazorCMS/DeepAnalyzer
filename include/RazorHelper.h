@@ -58,6 +58,7 @@ class RazorHelper {
         std::vector<int> getDileptonTriggerNums() { return dileptonTriggerNums; }
         std::vector<int> getSingleLeptonTriggerNums() { return singleLeptonTriggerNums; }
         std::vector<int> getHadronicTriggerNums() { return hadronicTriggerNums; }
+        std::vector<int> getMonojetTriggerNums() { return MonojetTriggerNums; }
         double getSingleMuTriggerScaleFactor(float pt, float eta, bool isTight, bool passedTrigger);
         double getSingleEleTriggerScaleFactor(float pt, float eta, bool isTight, bool passedTrigger);
         double getSingleMuTriggerEfficiency(float pt, float eta, bool isTight, bool passedTrigger);
@@ -298,6 +299,7 @@ class RazorHelper {
         std::vector<int> dileptonTriggerNums;
         std::vector<int> singleLeptonTriggerNums;
         std::vector<int> hadronicTriggerNums;
+        std::vector<int> MonojetTriggerNums;
 
         // for jet energy corrections
 	std::vector<std::vector<JetCorrectorParameters> > correctionParameters;

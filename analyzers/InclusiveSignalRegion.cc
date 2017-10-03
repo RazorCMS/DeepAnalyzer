@@ -31,7 +31,8 @@ class RazorVarCollection
         // Member functions 
         void resetVars() 
         { //call for each event
-            MR = -1; Rsq = -1; dPhiRazor = -9;
+            MR = -9999.; Rsq = -9999.; dPhiRazor = -9999.;
+            MT2 = -9999.;
             RsqGenMet = -1;
             leadingJetPt = -1; subleadingJetPt = -1; 
             leadingTightMuPt = -1; leadingTightElePt = -1;
@@ -58,6 +59,7 @@ class RazorVarCollection
             t->Branch(("RsqGenMet"+conn+tag).c_str(), &RsqGenMet, ("RsqGenMet"+conn+tag+"/F").c_str());
             t->Branch(("metOverCaloMet"+conn+tag).c_str(), &metOverCaloMet, ("metOverCaloMet"+conn+tag+"/F").c_str());
             t->Branch(("dPhiRazor"+conn+tag).c_str(), &dPhiRazor, ("dPhiRazor"+conn+tag+"/F").c_str());
+            t->Branch(("MT2"+conn+tag).c_str(), &MT2, ("MT2"+conn+tag+"/F").c_str());
             t->Branch(("leadingJetPt"+conn+tag).c_str(), &leadingJetPt, 
                     ("leadingJetPt"+conn+tag+"/F").c_str());
             t->Branch(("subleadingJetPt"+conn+tag).c_str(), &subleadingJetPt, 
@@ -91,6 +93,7 @@ class RazorVarCollection
 
         // List of variables
         float MR,Rsq,RsqGenMet,dPhiRazor,leadingJetPt,subleadingJetPt,leadingTightMuPt,leadingTightElePt,mT,mTLoose,mTGenMet, mTLooseGenMet;
+        float MT2;
         int nSelectedJets,nBTaggedJets,nJets80;
         int nVetoMuons, nTightMuons, nVetoElectrons, nTightElectrons;
         float metOverCaloMet;
@@ -1444,7 +1447,10 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
 
             vars.second->dPhiRazor = deltaPhi(hemispheres[0].Phi(),hemispheres[1].Phi());
             vars.second->metOverCaloMet = MyMET.Pt()/metCaloPt;
-            
+           
+            // Compute MT2
+            vars.second->MT2 = calcMT2(0., false, vars.second->GoodJets, MyMET, 2, 3);
+
             // Compute transverse mass 
             if (vars.second->nTightMuons + vars.second->nTightElectrons > 0)
             {

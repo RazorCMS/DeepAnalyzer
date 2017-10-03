@@ -1,1 +1,1 @@
-Thong's experimental area to play with some cute ideas.
+Experimental area to try some cute ideas.

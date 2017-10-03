@@ -1729,7 +1729,7 @@ double RazorAnalyzer::JetEnergyCorrectionFactor( double jetRawPt, double jetEta,
 						 bool printDebug) {
 
   int foundIndex = -1;
-  for (int i=0; i<JetCorrectionsIOV.size(); i++) {
+  for (unsigned int i=0; i<JetCorrectionsIOV.size(); i++) {
     if (run >= JetCorrectionsIOV[i].first && run <= JetCorrectionsIOV[i].second) {
       foundIndex = i;
     }
@@ -2814,13 +2814,19 @@ double RazorAnalyzer::GetAlphaT(vector<TLorentzVector> jets)
 double RazorAnalyzer::GetDPhiMin(vector<TLorentzVector> jets)
     // This variable is used in the alphaT analysis
 {
-    int nJets = jets.size();
+    //int nJets = jets.size();
     double dPhiMin = -1.;
     float HT = 0.;
     float MhtX = 0.;
     float MhtY = 0.;
+    
     // Search for min dPhi between recomputed missing HT and test jets
-    for (auto& obj : jets) { HT += obj.Pt(); MhtX += obj.Px(); MhtY += obj.Py(); }
+    for (auto& obj : jets) 
+    { 
+        HT += obj.Pt(); 
+        MhtX += obj.Px(); 
+        MhtY += obj.Py(); 
+    }
     TLorentzVector MyMHT;
     MyMHT.SetPxPyPzE(-MhtX, -MhtY, 0, sqrt(pow(MhtX,2) + pow(MhtY,2)));
 

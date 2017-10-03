@@ -18,6 +18,8 @@
 #include "vector"
 #include "vector"
 
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 class RazorEvents {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
@@ -1186,6 +1188,7 @@ void RazorEvents::Show(Long64_t entry)
    if (!fChain) return;
    fChain->Show(entry);
 }
+
 Int_t RazorEvents::Cut(Long64_t entry)
 {
 // This function may be called from Loop.
@@ -1193,4 +1196,5 @@ Int_t RazorEvents::Cut(Long64_t entry)
 // returns -1 otherwise.
    return 1;
 }
+
 #endif // #ifdef RazorEvents_cxx

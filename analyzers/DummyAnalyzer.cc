@@ -1,4 +1,5 @@
 #include "DummyAnalyzer.h"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 void DummyAnalyzer::Analyze(bool isData, int option, string outputFileName, string label)
 {

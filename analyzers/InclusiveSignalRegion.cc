@@ -12,6 +12,8 @@
 //ROOT includes
 #include "TH1F.h"
 #include "TH2D.h"
+ 
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 
 using namespace std;
 
@@ -154,7 +156,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
     //Tree Initialization
     /////////////////////////////////
     bool use_sys = false;
-
+    bool use_full_tree = false;
     //To hold main variables
     map<string, RazorVarCollection*> mainVars;
     vector<string> varCollectionNames;
@@ -234,12 +236,12 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
     float topTagScaleFactor, topTagScaleFactor_Tau32Up, topTagScaleFactor_Tau32Down;
     float topTagScaleFactor_FastsimEffUp, topTagScaleFactor_FastsimEffDown;
 
-    //SMS parameters 
+    // SMS parameters 
     int mGluino, mLSP;
     int nCharginoFromGluino, ntFromGluino;
     bool Flag_hasEcalGainSwitch;
 
-    //Set branches
+    // Set branches
     for (auto &vars : mainVars) 
     {
         vars.second->setBranches(razorTree);
@@ -252,95 +254,101 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
     razorTree->Branch("mjj_leadingJets", &mjj_leadingJets, "mjj_leadingJets/F");
     razorTree->Branch("mjj_hemispheres", &mjj_hemispheres, "mjj_hemispheres/F");
     razorTree->Branch("HLTDecision", &HLTDecision, "HLTDecision[300]/O");
-    //MET filters
-    //    razorTree->Branch("Flag_HBHENoiseFilter", &Flag_HBHENoiseFilter, "Flag_HBHENoiseFilter/O");
-    //    razorTree->Branch("Flag_HBHEIsoNoiseFilter", &Flag_HBHEIsoNoiseFilter, "Flag_HBHEIsoNoiseFilter/O");
-    //    razorTree->Branch("Flag_badChargedCandidateFilter", &Flag_badChargedCandidateFilter, "Flag_badChargedCandidateFilter/O");
-    //    razorTree->Branch("Flag_badMuonFilter", &Flag_badMuonFilter, "Flag_badMuonFilter/O");
-    //    razorTree->Branch("Flag_badGlobalMuonFilter", &Flag_badGlobalMuonFilter, "Flag_badGlobalMuonFilter/O");
-    //    razorTree->Branch("Flag_duplicateMuonFilter", &Flag_duplicateMuonFilter, "Flag_duplicateMuonFilter/O");
-    //    razorTree->Branch("Flag_CSCTightHaloFilter", &Flag_CSCTightHaloFilter, "Flag_CSCTightHaloFilter/O");
-    //    razorTree->Branch("Flag_hcalLaserEventFilter", &Flag_hcalLaserEventFilter, "Flag_hcalLaserEventFilter/O");
-    //    razorTree->Branch("Flag_EcalDeadCellTriggerPrimitiveFilter", &Flag_EcalDeadCellTriggerPrimitiveFilter, "Flag_EcalDeadCellTriggerPrimitiveFilter/O");
-    //    razorTree->Branch("Flag_goodVertices", &Flag_goodVertices, "Flag_goodVertices/O");
-    //    razorTree->Branch("Flag_trackingFailureFilter", &Flag_trackingFailureFilter, "Flag_trackingFailureFilter/O");
-    //    razorTree->Branch("Flag_eeBadScFilter", &Flag_eeBadScFilter, "Flag_eeBadScFilter/O");
-    //    razorTree->Branch("Flag_ecalLaserCorrFilter", &Flag_ecalLaserCorrFilter, "Flag_ecalLaserCorrFilter/O");
-    //    razorTree->Branch("Flag_trkPOGFilters", &Flag_trkPOGFilters, "Flag_trkPOGFilters/O");
-    //    razorTree->Branch("Flag_trkPOG_manystripclus53X", &Flag_trkPOG_manystripclus53X, "Flag_trkPOG_manystripclus53X/O");
-    //    razorTree->Branch("Flag_trkPOG_toomanystripclus53X", &Flag_trkPOG_toomanystripclus53X, "Flag_trkPOG_toomanystripclus53X/O");
-    //    razorTree->Branch("Flag_trkPOG_logErrorTooManyClusters", &Flag_trkPOG_logErrorTooManyClusters, "Flag_trkPOG_logErrorTooManyClusters/O");
-    //    razorTree->Branch("Flag_METFilters", &Flag_METFilters, "Flag_METFilters/O");
-    //    razorTree->Branch("Flag_hasEcalGainSwitch", &Flag_hasEcalGainSwitch, "Flag_hasEcalGainSwitch/O");
 
+    if (use_full_tree)
+    {
+        //MET filters
+        razorTree->Branch("Flag_HBHENoiseFilter", &Flag_HBHENoiseFilter, "Flag_HBHENoiseFilter/O");
+        razorTree->Branch("Flag_HBHEIsoNoiseFilter", &Flag_HBHEIsoNoiseFilter, "Flag_HBHEIsoNoiseFilter/O");
+        razorTree->Branch("Flag_badChargedCandidateFilter", &Flag_badChargedCandidateFilter, "Flag_badChargedCandidateFilter/O");
+        razorTree->Branch("Flag_badMuonFilter", &Flag_badMuonFilter, "Flag_badMuonFilter/O");
+        razorTree->Branch("Flag_badGlobalMuonFilter", &Flag_badGlobalMuonFilter, "Flag_badGlobalMuonFilter/O");
+        razorTree->Branch("Flag_duplicateMuonFilter", &Flag_duplicateMuonFilter, "Flag_duplicateMuonFilter/O");
+        razorTree->Branch("Flag_CSCTightHaloFilter", &Flag_CSCTightHaloFilter, "Flag_CSCTightHaloFilter/O");
+        razorTree->Branch("Flag_hcalLaserEventFilter", &Flag_hcalLaserEventFilter, "Flag_hcalLaserEventFilter/O");
+        razorTree->Branch("Flag_EcalDeadCellTriggerPrimitiveFilter", &Flag_EcalDeadCellTriggerPrimitiveFilter, "Flag_EcalDeadCellTriggerPrimitiveFilter/O");
+        razorTree->Branch("Flag_goodVertices", &Flag_goodVertices, "Flag_goodVertices/O");
+        razorTree->Branch("Flag_trackingFailureFilter", &Flag_trackingFailureFilter, "Flag_trackingFailureFilter/O");
+        razorTree->Branch("Flag_eeBadScFilter", &Flag_eeBadScFilter, "Flag_eeBadScFilter/O");
+        razorTree->Branch("Flag_ecalLaserCorrFilter", &Flag_ecalLaserCorrFilter, "Flag_ecalLaserCorrFilter/O");
+        razorTree->Branch("Flag_trkPOGFilters", &Flag_trkPOGFilters, "Flag_trkPOGFilters/O");
+        razorTree->Branch("Flag_trkPOG_manystripclus53X", &Flag_trkPOG_manystripclus53X, "Flag_trkPOG_manystripclus53X/O");
+        razorTree->Branch("Flag_trkPOG_toomanystripclus53X", &Flag_trkPOG_toomanystripclus53X, "Flag_trkPOG_toomanystripclus53X/O");
+        razorTree->Branch("Flag_trkPOG_logErrorTooManyClusters", &Flag_trkPOG_logErrorTooManyClusters, "Flag_trkPOG_logErrorTooManyClusters/O");
+        razorTree->Branch("Flag_METFilters", &Flag_METFilters, "Flag_METFilters/O");
+        razorTree->Branch("Flag_hasEcalGainSwitch", &Flag_hasEcalGainSwitch, "Flag_hasEcalGainSwitch/O");
+    }   
 
     razorTree->Branch("HLTMR", &HLTMR, "HLTMR/F");
     razorTree->Branch("HLTRSQ", &HLTRSQ, "HLTRSQ/F");
     razorTree->Branch("nWTags", &nWTags, "nWTags/I");
     razorTree->Branch("nTopTags", &nTopTags, "nTopTags/I");
     if (!isData) {    
-        //        razorTree->Branch("genWeight", &genWeight, "genWeight/F");
         razorTree->Branch("weight", &weight, "weight/F");
-        //        razorTree->Branch("ISRSystWeightUp", &ISRSystWeightUp, "ISRSystWeightUp/F");
-        //        razorTree->Branch("ISRSystWeightDown", &ISRSystWeightDown, "ISRSystWeightDown/F");
-        //        razorTree->Branch("pileupWeight", &pileupWeight, "pileupWeight/F");
-        //        razorTree->Branch("pileupWeightUp", &pileupWeightUp, "pileupWeightUp/F");
-        //        razorTree->Branch("pileupWeightDown", &pileupWeightDown, "pileupWeightDown/F");
-        //        razorTree->Branch("btagCorrFactor", &btagCorrFactor, "btagCorrFactor/F");
-        //        razorTree->Branch("topPtWeight", &topPtWeight, "topPtWeight/F");
-        //        razorTree->Branch("NPU", &NPU, "NPU/I");
-        //        razorTree->Branch("leadingGenLeptonPt", &leadingGenLeptonPt, "leadingGenLeptonPt/F");
-        //        razorTree->Branch("leadingGenLeptonEta", &leadingGenLeptonEta, "leadingGenLeptonEta/F");
-        //        razorTree->Branch("leadingGenLeptonType", &leadingGenLeptonType, "leadingGenLeptonType/I");
-        //        razorTree->Branch("subLeadingGenLeptonPt", &subLeadingGenLeptonPt, "subLeadingGenLeptonPt/F");
-        //        razorTree->Branch("subLeadingGenLeptonEta", &subLeadingGenLeptonEta, "subLeadingGenLeptonEta/F");
-        //        razorTree->Branch("subLeadingGenLeptonType", &subLeadingGenLeptonType, "subLeadingGenLeptonType/I");
-        //        razorTree->Branch("NGenBJets", &NGenBJets, "NGenBJets/I");
-        //        razorTree->Branch("genHT", &genHT, "genHT/F");
         razorTree->Branch("NISRJets", &NISRJets, "NISRJets/I");
-        //        razorTree->Branch("sf_muonEffUp", &sf_muonEffUp, "sf_muonEffUp/F");
-        //        razorTree->Branch("sf_muonEffDown", &sf_muonEffDown, "sf_muonEffDown/F");
-        //        razorTree->Branch("sf_vetoMuonEffUp", &sf_vetoMuonEffUp, "sf_vetoMuonEffUp/F");
-        //        razorTree->Branch("sf_vetoMuonEffDown", &sf_vetoMuonEffDown, "sf_vetoMuonEffDown/F");
-        //        razorTree->Branch("sf_eleEffUp", &sf_eleEffUp, "sf_eleEffUp/F");
-        //        razorTree->Branch("sf_eleEffDown", &sf_eleEffDown, "sf_eleEffDown/F");
-        //        razorTree->Branch("sf_vetoEleEffUp", &sf_vetoEleEffUp, "sf_vetoEleEffUp/F");
-        //        razorTree->Branch("sf_vetoEleEffDown", &sf_vetoEleEffDown, "sf_vetoEleEffDown/F");
-        //        razorTree->Branch("sf_tauEffUp", &sf_tauEffUp, "sf_tauEffUp/F");
-        //        razorTree->Branch("sf_tauEffDown", &sf_tauEffDown, "sf_tauEffDown/F");
-        //        razorTree->Branch("sf_muonTrigUp", &sf_muonTrigUp, "sf_muonTrigUp/F");
-        //        razorTree->Branch("sf_muonTrigDown", &sf_muonTrigDown, "sf_muonTrigDown/F");
-        //        razorTree->Branch("sf_eleTrigUp", &sf_eleTrigUp, "sf_eleTrigUp/F");
-        //        razorTree->Branch("sf_eleTrigDown", &sf_eleTrigDown, "sf_eleTrigDown/F");
-        //        razorTree->Branch("sf_btagUp", &sf_btagUp, "sf_btagUp/F");
-        //        razorTree->Branch("sf_btagDown", &sf_btagDown, "sf_btagDown/F");
-        //        razorTree->Branch("sf_bmistagUp", &sf_bmistagUp, "sf_bmistagUp/F");
-        //        razorTree->Branch("sf_bmistagDown", &sf_bmistagDown, "sf_bmistagDown/F");
-        //        razorTree->Branch("sf_muonEffFastsimSFUp", &sf_muonEffFastsimSFUp, "sf_muonEffFastsimSFUp/F");
-        //        razorTree->Branch("sf_muonEffFastsimSFDown", &sf_muonEffFastsimSFDown, "sf_muonEffFastsimSFDown/F");
-        //        razorTree->Branch("sf_eleEffFastsimSFUp", &sf_eleEffFastsimSFUp, "sf_eleEffFastsimSFUp/F");
-        //        razorTree->Branch("sf_eleEffFastsimSFDown", &sf_eleEffFastsimSFDown, "sf_eleEffFastsimSFDown/F");
-        //        razorTree->Branch("sf_btagFastsimSFUp", &sf_btagFastsimSFUp, "sf_btagFastsimSFUp/F");
-        //        razorTree->Branch("sf_btagFastsimSFDown", &sf_btagFastsimSFDown, "sf_btagFastsimSFDown/F");
-        //        razorTree->Branch("sf_vetoMuonEffFastsimSFUp", &sf_vetoMuonEffFastsimSFUp, "sf_vetoMuonEffFastsimSFUp/F");
-        //        razorTree->Branch("sf_vetoMuonEffFastsimSFDown", &sf_vetoMuonEffFastsimSFDown, "sf_vetoMuonEffFastsimSFDown/F");
-        //        razorTree->Branch("sf_vetoEleEffFastsimSFUp", &sf_vetoEleEffFastsimSFUp, "sf_vetoEleEffFastsimSFUp/F");
-        //        razorTree->Branch("sf_vetoEleEffFastsimSFDown", &sf_vetoEleEffFastsimSFDown, "sf_vetoEleEffFastsimSFDown/F");
-        //        razorTree->Branch("sf_facScaleUp", &sf_facScaleUp, "sf_facScaleUp/F");
-        //        razorTree->Branch("sf_facScaleDown", &sf_facScaleDown, "sf_facScaleDown/F");
-        //        razorTree->Branch("sf_renScaleUp", &sf_renScaleUp, "sf_renScaleUp/F");
-        //        razorTree->Branch("sf_renScaleDown", &sf_renScaleDown, "sf_renScaleDown/F");
-        //        razorTree->Branch("sf_facRenScaleUp", &sf_facRenScaleUp, "sf_facRenScaleUp/F");
-        //        razorTree->Branch("sf_facRenScaleDown", &sf_facRenScaleDown, "sf_facRenScaleDown/F");
-        //        razorTree->Branch("pdfWeights", "std::vector<float>",&pdfWeights); //get PDF weights directly from RazorEvents
-        //        razorTree->Branch("nWTags_SDMassUp", &nWTags_SDMassUp, "nWTags_SDMassUp/I");
-        //        razorTree->Branch("nWTags_SDMassDown", &nWTags_SDMassDown, "nWTags_SDMassDown/I");
-        //        razorTree->Branch("wTagScaleFactor", &wTagScaleFactor, "wTagScaleFactor/F"); 
-        //        razorTree->Branch("wTagScaleFactor_Tau21Up", &wTagScaleFactor_Tau21Up, "wTagScaleFactor_Tau21Up/F"); 
-        //        razorTree->Branch("wTagScaleFactor_Tau21Down", &wTagScaleFactor_Tau21Down, "wTagScaleFactor_Tau21Down/F");
-        //        razorTree->Branch("topTagScaleFactor", &topTagScaleFactor, "topTagScaleFactor/F"); 
-        //        razorTree->Branch("topTagScaleFactor_Tau32Up", &topTagScaleFactor_Tau32Up, "topTagScaleFactor_Tau32Up/F"); 
-        //        razorTree->Branch("topTagScaleFactor_Tau32Down", &topTagScaleFactor_Tau32Down, "topTagScaleFactor_Tau32Down/F");
+        if (use_full_tree)
+        {
+            razorTree->Branch("genWeight", &genWeight, "genWeight/F");
+            razorTree->Branch("ISRSystWeightUp", &ISRSystWeightUp, "ISRSystWeightUp/F");
+            razorTree->Branch("ISRSystWeightDown", &ISRSystWeightDown, "ISRSystWeightDown/F");
+            razorTree->Branch("pileupWeight", &pileupWeight, "pileupWeight/F");
+            razorTree->Branch("pileupWeightUp", &pileupWeightUp, "pileupWeightUp/F");
+            razorTree->Branch("pileupWeightDown", &pileupWeightDown, "pileupWeightDown/F");
+            razorTree->Branch("btagCorrFactor", &btagCorrFactor, "btagCorrFactor/F");
+            razorTree->Branch("topPtWeight", &topPtWeight, "topPtWeight/F");
+            razorTree->Branch("NPU", &NPU, "NPU/I");
+            razorTree->Branch("leadingGenLeptonPt", &leadingGenLeptonPt, "leadingGenLeptonPt/F");
+            razorTree->Branch("leadingGenLeptonEta", &leadingGenLeptonEta, "leadingGenLeptonEta/F");
+            razorTree->Branch("leadingGenLeptonType", &leadingGenLeptonType, "leadingGenLeptonType/I");
+            razorTree->Branch("subLeadingGenLeptonPt", &subLeadingGenLeptonPt, "subLeadingGenLeptonPt/F");
+            razorTree->Branch("subLeadingGenLeptonEta", &subLeadingGenLeptonEta, "subLeadingGenLeptonEta/F");
+            razorTree->Branch("subLeadingGenLeptonType", &subLeadingGenLeptonType, "subLeadingGenLeptonType/I");
+            razorTree->Branch("NGenBJets", &NGenBJets, "NGenBJets/I");
+            razorTree->Branch("genHT", &genHT, "genHT/F");
+            razorTree->Branch("sf_muonEffUp", &sf_muonEffUp, "sf_muonEffUp/F");
+            razorTree->Branch("sf_muonEffDown", &sf_muonEffDown, "sf_muonEffDown/F");
+            razorTree->Branch("sf_vetoMuonEffUp", &sf_vetoMuonEffUp, "sf_vetoMuonEffUp/F");
+            razorTree->Branch("sf_vetoMuonEffDown", &sf_vetoMuonEffDown, "sf_vetoMuonEffDown/F");
+            razorTree->Branch("sf_eleEffUp", &sf_eleEffUp, "sf_eleEffUp/F");
+            razorTree->Branch("sf_eleEffDown", &sf_eleEffDown, "sf_eleEffDown/F");
+            razorTree->Branch("sf_vetoEleEffUp", &sf_vetoEleEffUp, "sf_vetoEleEffUp/F");
+            razorTree->Branch("sf_vetoEleEffDown", &sf_vetoEleEffDown, "sf_vetoEleEffDown/F");
+            razorTree->Branch("sf_tauEffUp", &sf_tauEffUp, "sf_tauEffUp/F");
+            razorTree->Branch("sf_tauEffDown", &sf_tauEffDown, "sf_tauEffDown/F");
+            razorTree->Branch("sf_muonTrigUp", &sf_muonTrigUp, "sf_muonTrigUp/F");
+            razorTree->Branch("sf_muonTrigDown", &sf_muonTrigDown, "sf_muonTrigDown/F");
+            razorTree->Branch("sf_eleTrigUp", &sf_eleTrigUp, "sf_eleTrigUp/F");
+            razorTree->Branch("sf_eleTrigDown", &sf_eleTrigDown, "sf_eleTrigDown/F");
+            razorTree->Branch("sf_btagUp", &sf_btagUp, "sf_btagUp/F");
+            razorTree->Branch("sf_btagDown", &sf_btagDown, "sf_btagDown/F");
+            razorTree->Branch("sf_bmistagUp", &sf_bmistagUp, "sf_bmistagUp/F");
+            razorTree->Branch("sf_bmistagDown", &sf_bmistagDown, "sf_bmistagDown/F");
+            razorTree->Branch("sf_muonEffFastsimSFUp", &sf_muonEffFastsimSFUp, "sf_muonEffFastsimSFUp/F");
+            razorTree->Branch("sf_muonEffFastsimSFDown", &sf_muonEffFastsimSFDown, "sf_muonEffFastsimSFDown/F");
+            razorTree->Branch("sf_eleEffFastsimSFUp", &sf_eleEffFastsimSFUp, "sf_eleEffFastsimSFUp/F");
+            razorTree->Branch("sf_eleEffFastsimSFDown", &sf_eleEffFastsimSFDown, "sf_eleEffFastsimSFDown/F");
+            razorTree->Branch("sf_btagFastsimSFUp", &sf_btagFastsimSFUp, "sf_btagFastsimSFUp/F");
+            razorTree->Branch("sf_btagFastsimSFDown", &sf_btagFastsimSFDown, "sf_btagFastsimSFDown/F");
+            razorTree->Branch("sf_vetoMuonEffFastsimSFUp", &sf_vetoMuonEffFastsimSFUp, "sf_vetoMuonEffFastsimSFUp/F");
+            razorTree->Branch("sf_vetoMuonEffFastsimSFDown", &sf_vetoMuonEffFastsimSFDown, "sf_vetoMuonEffFastsimSFDown/F");
+            razorTree->Branch("sf_vetoEleEffFastsimSFUp", &sf_vetoEleEffFastsimSFUp, "sf_vetoEleEffFastsimSFUp/F");
+            razorTree->Branch("sf_vetoEleEffFastsimSFDown", &sf_vetoEleEffFastsimSFDown, "sf_vetoEleEffFastsimSFDown/F");
+            razorTree->Branch("sf_facScaleUp", &sf_facScaleUp, "sf_facScaleUp/F");
+            razorTree->Branch("sf_facScaleDown", &sf_facScaleDown, "sf_facScaleDown/F");
+            razorTree->Branch("sf_renScaleUp", &sf_renScaleUp, "sf_renScaleUp/F");
+            razorTree->Branch("sf_renScaleDown", &sf_renScaleDown, "sf_renScaleDown/F");
+            razorTree->Branch("sf_facRenScaleUp", &sf_facRenScaleUp, "sf_facRenScaleUp/F");
+            razorTree->Branch("sf_facRenScaleDown", &sf_facRenScaleDown, "sf_facRenScaleDown/F");
+            razorTree->Branch("pdfWeights", "std::vector<float>",&pdfWeights); //get PDF weights directly from RazorEvents
+            razorTree->Branch("nWTags_SDMassUp", &nWTags_SDMassUp, "nWTags_SDMassUp/I");
+            razorTree->Branch("nWTags_SDMassDown", &nWTags_SDMassDown, "nWTags_SDMassDown/I");
+            razorTree->Branch("wTagScaleFactor", &wTagScaleFactor, "wTagScaleFactor/F"); 
+            razorTree->Branch("wTagScaleFactor_Tau21Up", &wTagScaleFactor_Tau21Up, "wTagScaleFactor_Tau21Up/F"); 
+            razorTree->Branch("wTagScaleFactor_Tau21Down", &wTagScaleFactor_Tau21Down, "wTagScaleFactor_Tau21Down/F");
+            razorTree->Branch("topTagScaleFactor", &topTagScaleFactor, "topTagScaleFactor/F"); 
+            razorTree->Branch("topTagScaleFactor_Tau32Up", &topTagScaleFactor_Tau32Up, "topTagScaleFactor_Tau32Up/F"); 
+            razorTree->Branch("topTagScaleFactor_Tau32Down", &topTagScaleFactor_Tau32Down, "topTagScaleFactor_Tau32Down/F");
+        }
         if (isFastsimSMS){
             razorTree->Branch("mGluino", &mGluino, "mGluino/I");
             razorTree->Branch("mLSP", &mLSP, "mLSP/I");
@@ -365,7 +373,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
 
     if (fChain == 0) return;
     cout << "Total Events: " << fChain->GetEntries() << "\n";
-    Long64_t nbytes = 0, nb = 0;    
+    Long64_t nbytes = 0;    
     Long64_t nentries = fChain->GetEntriesFast();
     for (Long64_t jentry = 0; jentry < nentries; jentry++) 
     {
@@ -378,7 +386,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         Long64_t ientry = LoadTree(jentry);
         if (ientry < 0) break;
 
-        nb = fChain->GetEntry(jentry);
+        fChain->GetEntry(jentry);
 
         //Reset tree variables
         for (auto &vars : mainVars) vars.second->resetVars();
@@ -1273,6 +1281,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                 TLorentzVector thisJetJESDown = makeTLorentzVector(jetPtJESDown, jetEta[i], jetPhi[i], jetEJESDown);
                 TLorentzVector thisJetJERUp = makeTLorentzVector(jetPtJERUp, jetEta[i], jetPhi[i], jetEJERUp);
                 TLorentzVector thisJetJERDown = makeTLorentzVector(jetPtJERDown, jetEta[i], jetPhi[i], jetEJERDown);
+                
                 //Propagate uncertainties to the MET
                 if (jetPtJESUp > 20) 
                 {
@@ -1294,6 +1303,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                     mainVars["JERDown"]->MetXCorr += -1 * (thisJetJERDown.Px() - thisJet.Px());
                     mainVars["JERDown"]->MetYCorr += -1 * (thisJetJERDown.Py() - thisJet.Py());
                 }
+                
                 //Record jets that pass the cut
                 if (jetPtJESUp > BJET_CUT && isCSVM(i)) mainVars["JESUp"]->nBTaggedJets++;
                 if (jetPtJESDown > BJET_CUT && isCSVM(i)) mainVars["JESDown"]->nBTaggedJets++;
@@ -1755,22 +1765,17 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         //Baseline cuts
         /////////////////////////////////
 
-        //Razor
+        // Leading jet PT > 100 GeV
         bool passCuts = false;
         for (auto &vars : mainVars) 
         {
-            if (vars.second->MR > 200 && 
-                    (vars.second->Rsq > 0.5 || (isFastsimSMS && vars.second->RsqGenMet > 0.15)) && 
-                    vars.second->box != NONE) passCuts = true;
+            if (vars.second->leadingJetPt > 100 && vars.second->box != NONE) passCuts = true;
         }
 
         if (!passCuts) continue;
 
         //Trigger
-        if (!passedDileptonTrigger && !passedSingleLeptonTrigger && !passedHadronicTrigger && !passedMonojetTrigger) 
-        {
-            continue;
-        }
+        // if (!passedDileptonTrigger && !passedSingleLeptonTrigger && !passedHadronicTrigger && !passedMonojetTrigger) continue;
 
         /////////////////////////////////
         //Noise filters
@@ -1782,6 +1787,25 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             if (!Flag_HBHEIsoNoiseFilter) continue;
             if (!Flag_goodVertices) continue;
             if (!Flag_eeBadScFilter) continue;
+            if (!Flag_HBHENoiseFilter) continue;
+            if (!Flag_HBHEIsoNoiseFilter) continue;
+            if (!Flag_badChargedCandidateFilter) continue;
+            if (!Flag_badMuonFilter) continue;
+            if (!Flag_badGlobalMuonFilter) continue;
+            if (!Flag_duplicateMuonFilter) continue;
+            if (!Flag_CSCTightHaloFilter) continue;
+            if (!Flag_hcalLaserEventFilter) continue;
+            if (!Flag_EcalDeadCellTriggerPrimitiveFilter) continue;
+            if (!Flag_goodVertices) continue;
+            if (!Flag_trackingFailureFilter) continue;
+            if (!Flag_eeBadScFilter) continue;
+            if (!Flag_ecalLaserCorrFilter) continue;
+            if (!Flag_trkPOGFilters) continue;
+            if (!Flag_trkPOG_manystripclus53X) continue;
+            if (!Flag_trkPOG_toomanystripclus53X) continue;
+            if (!Flag_trkPOG_logErrorTooManyClusters) continue;
+            if (!Flag_METFilters) continue;
+            if (!Flag_hasEcalGainSwitch) continue;
         }
 
         //Emulate the 2017 trigger

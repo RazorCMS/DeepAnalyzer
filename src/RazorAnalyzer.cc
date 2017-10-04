@@ -2841,7 +2841,7 @@ double RazorAnalyzer::GetDPhiMin(vector<TLorentzVector> jets)
         float recomputedMHTY = MhtY - obj.Py();
         TLorentzVector recomputedMHT;
         recomputedMHT.SetPxPyPzE(-recomputedMHTX, -recomputedMHTY, 0, sqrt(pow(recomputedMHTX,2) + pow(recomputedMHTY,2)));
-        double phiTemp = fabs(recomputedMHT.Phi() - obj.Phi());
+        double phiTemp = fabs(recomputedMHT.DeltaPhi(obj));
         if (dPhiMin < 0 || phiTemp < dPhiMin)   dPhiMin = phiTemp;
     }
 

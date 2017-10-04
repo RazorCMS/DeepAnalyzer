@@ -48,6 +48,7 @@ class RazorVarCollection
             leadingTightEle = TLorentzVector();
             GoodJets = vector<TLorentzVector>();
             GoodLeptons = vector<TLorentzVector>();
+            GoodPFObjects = vector<TLorentzVector>();
         }
 
         void setBranches(TTree *t) 
@@ -101,7 +102,7 @@ class RazorVarCollection
         // Non-tree variables
         float MetXCorr, MetYCorr;
         TLorentzVector leadingTightMu, leadingTightEle;
-        vector<TLorentzVector> GoodJets, GoodLeptons;
+        vector<TLorentzVector> GoodJets, GoodLeptons, GoodPFObjects;
         string tag;
 };
 
@@ -815,6 +816,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                     {
                         mainVars["MESUp"]->nVetoMuons++;
                         mainVars["MESUp"]->GoodLeptons.push_back(thisMuonUp);
+                        mainVars["MESUp"]->GoodPFObjects.push_back(thisMuonUp);
                         mainVars["MESUp"]->MetXCorr += thisMuon.Px() - thisMuonUp.Px();
                         mainVars["MESUp"]->MetYCorr += thisMuon.Py() - thisMuonUp.Py();
                     }
@@ -822,6 +824,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                     {
                         mainVars["MESDown"]->nVetoMuons++;
                         mainVars["MESDown"]->GoodLeptons.push_back(thisMuonDown);
+                        mainVars["MESDown"]->GoodPFObjects.push_back(thisMuonDown);
                         mainVars["MESDown"]->MetXCorr += thisMuon.Px() - thisMuonDown.Px();
                         mainVars["MESDown"]->MetYCorr += thisMuon.Py() - thisMuonDown.Py();
                     }
@@ -872,6 +875,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                     {
                         vars.second->nVetoMuons++;
                         vars.second->GoodLeptons.push_back(thisMuon);
+                        vars.second->GoodPFObjects.push_back(thisMuon);
                     }
                 }
             }
@@ -954,12 +958,14 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                     if (elePtUp > ELE_VETO_CUT) {
                         mainVars["EESUp"]->nVetoElectrons++;
                         mainVars["EESUp"]->GoodLeptons.push_back(thisElectronUp); 
+                        mainVars["EESUp"]->GoodPFObjects.push_back(thisElectronUp); 
                         mainVars["EESUp"]->MetXCorr += thisElectron.Px() - thisElectronUp.Px();
                         mainVars["EESUp"]->MetYCorr += thisElectron.Py() - thisElectronUp.Py();
                     }
                     if (elePtDown > ELE_VETO_CUT) {
                         mainVars["EESDown"]->nVetoElectrons++;
                         mainVars["EESDown"]->GoodLeptons.push_back(thisElectronDown);
+                        mainVars["EESDown"]->GoodPFObjects.push_back(thisElectronDown);
                         mainVars["EESDown"]->MetXCorr += thisElectron.Px() - thisElectronDown.Px();
                         mainVars["EESDown"]->MetYCorr += thisElectron.Py() - thisElectronDown.Py();
                     }
@@ -1011,6 +1017,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                     {
                         vars.second->nVetoElectrons++;
                         vars.second->GoodLeptons.push_back(thisElectron);            
+                        vars.second->GoodPFObjects.push_back(thisElectron);            
                     }
                 }
             }
@@ -1239,6 +1246,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                         {
                             // add to good jets list
                             vars.second->GoodJets.push_back(thisJet);
+                            vars.second->GoodPFObjects.push_back(thisJet);
                             vars.second->nSelectedJets++;
                             if (jetCorrPt > 80) vars.second->nJets80++;
                         }
@@ -1315,24 +1323,28 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                 if (jetPtJESUp > JET_CUT)
                 {
                     mainVars["JESUp"]->GoodJets.push_back(thisJetJESUp);
+                    mainVars["JESUp"]->GoodPFObjects.push_back(thisJetJESUp);
                     mainVars["JESUp"]->nSelectedJets++;
                     if (thisJetJESUp.Pt() > 80) mainVars["JESUp"]->nJets80++;
                 }
                 if (jetPtJESDown > JET_CUT)
                 {
                     mainVars["JESDown"]->GoodJets.push_back(thisJetJESDown);
+                    mainVars["JESDown"]->GoodPFObjects.push_back(thisJetJESDown);
                     mainVars["JESDown"]->nSelectedJets++;
                     if (thisJetJESDown.Pt() > 80) mainVars["JESDown"]->nJets80++;
                 }
                 if (jetPtJERUp > JET_CUT)
                 {
                     mainVars["JERUp"]->GoodJets.push_back(thisJetJERUp);
+                    mainVars["JERUp"]->GoodPFObjects.push_back(thisJetJERUp);
                     mainVars["JERUp"]->nSelectedJets++;
                     if (thisJetJERUp.Pt() > 80) mainVars["JERUp"]->nJets80++;
                 }
                 if (jetPtJERDown > JET_CUT)
                 {
                     mainVars["JERDown"]->GoodJets.push_back(thisJetJERDown);
+                    mainVars["JERDown"]->GoodPFObjects.push_back(thisJetJERDown);
                     mainVars["JERDown"]->nSelectedJets++;
                     if (thisJetJERDown.Pt() > 80) mainVars["JERDown"]->nJets80++;
                 }
@@ -1388,14 +1400,6 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         //Compute razor variables and mT
         /////////////////////////////////
 
-        //Combine jet and lepton collections
-        for (auto &vars : mainVars) {
-            for (auto &lep : vars.second->GoodLeptons) 
-            {
-                vars.second->GoodJets.push_back(lep);
-            }
-        }
-
         //Get HT
         HT = 0;
         for (auto& jet : mainVars[""]->GoodJets) HT += jet.Pt();
@@ -1436,20 +1440,24 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             GenMET.SetPxPyPzE(GenMetX, GenMetY, 0, sqrt(GenMetX*GenMetX + GenMetY*GenMetY));	      
 
             // Compute MR, Rsq, dPhiRazor
-            vector<TLorentzVector> hemispheres = getHemispheres(vars.second->GoodJets);
-            vars.second->MR = computeMR(hemispheres[0], hemispheres[1]); 
-            vars.second->Rsq = computeRsq(hemispheres[0], hemispheres[1], MyMET);
-
-            if (vars.first == "") 
+            if (GoodPFObjects.size() >= 2 
+                    && GoodJets.size() < 20 //this is a protection again crazy events
+               ) 
             {
-                vars.second->RsqGenMet = computeRsq(hemispheres[0], hemispheres[1], GenMET);
-            }
+                vector<TLorentzVector> hemispheres = getHemispheres(vars.second->GoodPFObjects);
+                vars.second->MR = computeMR(hemispheres[0], hemispheres[1]); 
+                vars.second->Rsq = computeRsq(hemispheres[0], hemispheres[1], MyMET);
 
-            vars.second->dPhiRazor = deltaPhi(hemispheres[0].Phi(),hemispheres[1].Phi());
+                if (vars.first == "") 
+                {
+                    vars.second->RsqGenMet = computeRsq(hemispheres[0], hemispheres[1], GenMET);
+                }
+                vars.second->dPhiRazor = deltaPhi(hemispheres[0].Phi(),hemispheres[1].Phi());
+            }           
             vars.second->metOverCaloMet = MyMET.Pt()/metCaloPt;
-           
+
             // Compute MT2
-            vars.second->MT2 = calcMT2(0., false, vars.second->GoodJets, MyMET, 2, 3);
+            if (GoodJets.size() >= 2) vars.second->MT2 = calcMT2(0., false, vars.second->GoodJets, MyMET, 2, 3);
 
             // Compute transverse mass 
             if (vars.second->nTightMuons + vars.second->nTightElectrons > 0)

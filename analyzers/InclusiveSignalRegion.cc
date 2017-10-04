@@ -34,6 +34,7 @@ class RazorVarCollection
             MR = -99.; Rsq = -99.; dPhiRazor = -99.;
             MT2 = -99.;
             alphaT = -99.;
+            dPhiMinJetMET = -99.;
             RsqGenMet = -99.;
             HT = -99.; MHT = -99.;
             leadingJetPt = -99.; subleadingJetPt = -99.; 
@@ -66,6 +67,7 @@ class RazorVarCollection
             t->Branch(("HT"+conn+tag).c_str(), &HT, ("HT"+conn+tag+"/F").c_str());
             t->Branch(("MHT"+conn+tag).c_str(), &MHT, ("MHT"+conn+tag+"/F").c_str());
             t->Branch(("alphaT"+conn+tag).c_str(), &alphaT, ("alphaT"+conn+tag+"/F").c_str());
+            t->Branch(("dPhiMinJetMET"+conn+tag).c_str(), &dPhiMinJetMET, ("dPhiMinJetMET"+conn+tag+"/F").c_str());
             t->Branch(("leadingJetPt"+conn+tag).c_str(), &leadingJetPt, 
                     ("leadingJetPt"+conn+tag+"/F").c_str());
             t->Branch(("subleadingJetPt"+conn+tag).c_str(), &subleadingJetPt, 
@@ -99,7 +101,7 @@ class RazorVarCollection
 
         // List of variables
         float MR,Rsq,RsqGenMet,dPhiRazor,leadingJetPt,subleadingJetPt,leadingTightMuPt,leadingTightElePt,mT,mTLoose,mTGenMet, mTLooseGenMet;
-        float MT2, HT, MHT, alphaT;
+        float MT2, HT, MHT, alphaT, dPhiMinJetMET;
         int nSelectedJets,nBTaggedJets,nJets80;
         int nVetoMuons, nTightMuons, nVetoElectrons, nTightElectrons;
         float metOverCaloMet;
@@ -1483,6 +1485,15 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             // Compute alphaT
             if (vars.second->GoodJets.size() >= 2) vars.second->alphaT = GetAlphaT(vars.second->GoodJets);
 
+            // Compute dPhiMinJetMET
+            double dPhiMin = -1.;
+            for (auto& jet : vars.second->GoodJets)
+            {
+                double phiTemp = fabs(MyMET.DeltaPhi(jet));
+                if (dPhiMin < 0 || phiTemp < dPhiMin) dPhiMin = phiTemp;
+            }  
+            vars.second->dPhiMinJetMET = dPhiMin;
+            
             // Compute transverse mass 
             if (vars.second->nTightMuons + vars.second->nTightElectrons > 0)
             {

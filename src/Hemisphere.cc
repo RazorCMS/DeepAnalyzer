@@ -24,7 +24,7 @@ Hemisphere::Hemisphere(vector<float> Px_vector, vector<float> Py_vector, vector<
         vector<float> E_vector, int seed_method, int hemisphere_association_method) : Object_Px(Px_vector),
     Object_Py(Py_vector), Object_Pz(Pz_vector), Object_E(E_vector), seed_meth(seed_method),
     hemi_meth(hemisphere_association_method), status(0),
-    dRminSeed1(0.5),nItermax(100),
+    dRminSeed1(0.5),nItermax(500),
     rejectISR(0), rejectISRPt(0), rejectISRPtmax(10000.),
     rejectISRDR(0), rejectISRDRmax(100.), dbg(0)  {
         for(int i = 0; i < (int) Object_Px.size(); i++){
@@ -40,7 +40,7 @@ Hemisphere::Hemisphere(vector<float> Px_vector, vector<float> Py_vector, vector<
         vector<float> E_vector) : Object_Px(Px_vector),
     Object_Py(Py_vector), Object_Pz(Pz_vector), Object_E(E_vector), seed_meth(0),
     hemi_meth(0), status(0),
-    dRminSeed1(0.5),nItermax(100),
+    dRminSeed1(0.5),nItermax(500),
     rejectISR(0), rejectISRPt(0), rejectISRPtmax(10000.),
     rejectISRDR(0), rejectISRDRmax(100.), dbg(0)  {
         for(int i = 0; i < (int) Object_Px.size(); i++){

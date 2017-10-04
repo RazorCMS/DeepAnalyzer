@@ -33,6 +33,7 @@ class RazorVarCollection
         { //call for each event
             MR = -99.; Rsq = -99.; dPhiRazor = -99.;
             MT2 = -99.;
+            alphaT = -99.;
             RsqGenMet = -99.;
             HT = -99.; MHT = -99.;
             leadingJetPt = -99.; subleadingJetPt = -99.; 
@@ -58,12 +59,13 @@ class RazorVarCollection
             if (tag == "") { conn = ""; } // remove underscore if not needed
             t->Branch(("MR"+conn+tag).c_str(), &MR, ("MR"+conn+tag+"/F").c_str());
             t->Branch(("Rsq"+conn+tag).c_str(), &Rsq, ("Rsq"+conn+tag+"/F").c_str());
-            t->Branch(("HT"+conn+tag).c_str(), &HT, ("HT"+conn+tag+"/F").c_str());
-            t->Branch(("MHT"+conn+tag).c_str(), &MHT, ("MHT"+conn+tag+"/F").c_str());
             t->Branch(("RsqGenMet"+conn+tag).c_str(), &RsqGenMet, ("RsqGenMet"+conn+tag+"/F").c_str());
             t->Branch(("metOverCaloMet"+conn+tag).c_str(), &metOverCaloMet, ("metOverCaloMet"+conn+tag+"/F").c_str());
             t->Branch(("dPhiRazor"+conn+tag).c_str(), &dPhiRazor, ("dPhiRazor"+conn+tag+"/F").c_str());
             t->Branch(("MT2"+conn+tag).c_str(), &MT2, ("MT2"+conn+tag+"/F").c_str());
+            t->Branch(("HT"+conn+tag).c_str(), &HT, ("HT"+conn+tag+"/F").c_str());
+            t->Branch(("MHT"+conn+tag).c_str(), &MHT, ("MHT"+conn+tag+"/F").c_str());
+            t->Branch(("alphaT"+conn+tag).c_str(), &alphaT, ("alphaT"+conn+tag+"/F").c_str());
             t->Branch(("leadingJetPt"+conn+tag).c_str(), &leadingJetPt, 
                     ("leadingJetPt"+conn+tag+"/F").c_str());
             t->Branch(("subleadingJetPt"+conn+tag).c_str(), &subleadingJetPt, 
@@ -97,7 +99,7 @@ class RazorVarCollection
 
         // List of variables
         float MR,Rsq,RsqGenMet,dPhiRazor,leadingJetPt,subleadingJetPt,leadingTightMuPt,leadingTightElePt,mT,mTLoose,mTGenMet, mTLooseGenMet;
-        float MT2, HT, MHT;
+        float MT2, HT, MHT, alphaT;
         int nSelectedJets,nBTaggedJets,nJets80;
         int nVetoMuons, nTightMuons, nVetoElectrons, nTightElectrons;
         float metOverCaloMet;
@@ -1477,6 +1479,9 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
 
             // Compute MT2
             if (vars.second->GoodJets.size() >= 2) vars.second->MT2 = calcMT2(0., false, vars.second->GoodJets, MyMET, 2, 3);
+
+            // Compute alphaT
+            if (vars.second->GoodJets.size() >= 2) vars.second->alphaT = GetAlphaT(vars.second->GoodJets);
 
             // Compute transverse mass 
             if (vars.second->nTightMuons + vars.second->nTightElectrons > 0)

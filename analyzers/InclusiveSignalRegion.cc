@@ -18,6 +18,8 @@
 using namespace std;
 
 const int NUM_PDF_WEIGHTS = 60;
+bool use_sys = false;
+bool use_full_tree = false;
 
 // Collection to hold main analysis variables
 class RazorVarCollection 
@@ -60,7 +62,6 @@ class RazorVarCollection
             if (tag == "") { conn = ""; } // remove underscore if not needed
             t->Branch(("MR"+conn+tag).c_str(), &MR, ("MR"+conn+tag+"/F").c_str());
             t->Branch(("Rsq"+conn+tag).c_str(), &Rsq, ("Rsq"+conn+tag+"/F").c_str());
-            t->Branch(("RsqGenMet"+conn+tag).c_str(), &RsqGenMet, ("RsqGenMet"+conn+tag+"/F").c_str());
             t->Branch(("metOverCaloMet"+conn+tag).c_str(), &metOverCaloMet, ("metOverCaloMet"+conn+tag+"/F").c_str());
             t->Branch(("dPhiRazor"+conn+tag).c_str(), &dPhiRazor, ("dPhiRazor"+conn+tag+"/F").c_str());
             t->Branch(("MT2"+conn+tag).c_str(), &MT2, ("MT2"+conn+tag+"/F").c_str());
@@ -72,22 +73,23 @@ class RazorVarCollection
                     ("leadingJetPt"+conn+tag+"/F").c_str());
             t->Branch(("subleadingJetPt"+conn+tag).c_str(), &subleadingJetPt, 
                     ("subleadingJetPt"+conn+tag+"/F").c_str());
-            t->Branch(("leadingTightMuPt"+conn+tag).c_str(), &leadingTightMuPt, 
-                    ("leadingTightMuPt"+conn+tag+"/F").c_str());
-            t->Branch(("leadingTightElePt"+conn+tag).c_str(), &leadingTightElePt, 
-                    ("leadingTightElePt"+conn+tag+"/F").c_str());
             t->Branch(("mT"+conn+tag).c_str(), &mT, ("mT"+conn+tag+"/F").c_str());
             t->Branch(("mTLoose"+conn+tag).c_str(), &mTLoose, ("mTLoose"+conn+tag+"/F").c_str());
-            t->Branch(("mTGenMet"+conn+tag).c_str(), &mTGenMet, ("mTGenMet"+conn+tag+"/F").c_str());
-            t->Branch(("mTLooseGenMet"+conn+tag).c_str(), &mTLooseGenMet, ("mTLooseGenMet"+conn+tag+"/F").c_str());
             t->Branch(("nSelectedJets"+conn+tag).c_str(), &nSelectedJets, 
                     ("nSelectedJets"+conn+tag+"/I").c_str());
             t->Branch(("nBTaggedJets"+conn+tag).c_str(), &nBTaggedJets, 
                     ("nBTaggedJets"+conn+tag+"/I").c_str());
             t->Branch(("nJets80"+conn+tag).c_str(), &nJets80, ("nJets80"+conn+tag+"/I").c_str());
             t->Branch(("box"+conn+tag).c_str(), &box, ("box"+conn+tag+"/I").c_str());
-            if (tag == "") 
+            if (tag == "" && use_full_tree) 
             {
+                t->Branch(("leadingTightMuPt"+conn+tag).c_str(), &leadingTightMuPt, 
+                        ("leadingTightMuPt"+conn+tag+"/F").c_str());
+                t->Branch(("leadingTightElePt"+conn+tag).c_str(), &leadingTightElePt, 
+                        ("leadingTightElePt"+conn+tag+"/F").c_str());
+                t->Branch(("RsqGenMet"+conn+tag).c_str(), &RsqGenMet, ("RsqGenMet"+conn+tag+"/F").c_str());
+                t->Branch(("mTGenMet"+conn+tag).c_str(), &mTGenMet, ("mTGenMet"+conn+tag+"/F").c_str());
+                t->Branch(("mTLooseGenMet"+conn+tag).c_str(), &mTLooseGenMet, ("mTLooseGenMet"+conn+tag+"/F").c_str());
                 t->Branch(("nVetoMuons"+conn+tag).c_str(), &nVetoMuons, 
                         ("nVetoMuons"+conn+tag+"/I").c_str());
                 t->Branch(("nTightMuons"+conn+tag).c_str(), &nTightMuons, 
@@ -166,8 +168,6 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
     /////////////////////////////////
     //Tree Initialization
     /////////////////////////////////
-    bool use_sys = false;
-    bool use_full_tree = false;
     //To hold main variables
     map<string, RazorVarCollection*> mainVars;
     vector<string> varCollectionNames;
@@ -287,12 +287,12 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         razorTree->Branch("Flag_trkPOG_logErrorTooManyClusters", &Flag_trkPOG_logErrorTooManyClusters, "Flag_trkPOG_logErrorTooManyClusters/O");
         razorTree->Branch("Flag_METFilters", &Flag_METFilters, "Flag_METFilters/O");
         razorTree->Branch("Flag_hasEcalGainSwitch", &Flag_hasEcalGainSwitch, "Flag_hasEcalGainSwitch/O");
+        razorTree->Branch("HLTMR", &HLTMR, "HLTMR/F");
+        razorTree->Branch("HLTRSQ", &HLTRSQ, "HLTRSQ/F");
+        razorTree->Branch("nWTags", &nWTags, "nWTags/I");
+        razorTree->Branch("nTopTags", &nTopTags, "nTopTags/I");
     }   
 
-    razorTree->Branch("HLTMR", &HLTMR, "HLTMR/F");
-    razorTree->Branch("HLTRSQ", &HLTRSQ, "HLTRSQ/F");
-    razorTree->Branch("nWTags", &nWTags, "nWTags/I");
-    razorTree->Branch("nTopTags", &nTopTags, "nTopTags/I");
     if (!isData) {    
         razorTree->Branch("weight", &weight, "weight/F");
         razorTree->Branch("NISRJets", &NISRJets, "NISRJets/I");
@@ -364,10 +364,13 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             razorTree->Branch("mLSP", &mLSP, "mLSP/I");
             razorTree->Branch("nCharginoFromGluino", &nCharginoFromGluino, "nCharginoFromGluino/I");
             razorTree->Branch("ntFromGluino", &ntFromGluino, "ntFromGluino/I");
-            razorTree->Branch("wTagScaleFactor_FastsimEffUp", &wTagScaleFactor_FastsimEffUp, "wTagScaleFactor_FastsimEffUp/F"); 
-            razorTree->Branch("wTagScaleFactor_FastsimEffDown", &wTagScaleFactor_FastsimEffDown, "wTagScaleFactor_FastsimEffDown/F"); 
-            razorTree->Branch("topTagScaleFactor_FastsimEffUp", &topTagScaleFactor_FastsimEffUp, "topTagScaleFactor_FastsimEffUp/F"); 
-            razorTree->Branch("topTagScaleFactor_FastsimEffDown", &topTagScaleFactor_FastsimEffDown, "topTagScaleFactor_FastsimEffDown/F"); 
+            if (use_full_tree)
+            {
+                razorTree->Branch("wTagScaleFactor_FastsimEffUp", &wTagScaleFactor_FastsimEffUp, "wTagScaleFactor_FastsimEffUp/F"); 
+                razorTree->Branch("wTagScaleFactor_FastsimEffDown", &wTagScaleFactor_FastsimEffDown, "wTagScaleFactor_FastsimEffDown/F"); 
+                razorTree->Branch("topTagScaleFactor_FastsimEffUp", &topTagScaleFactor_FastsimEffUp, "topTagScaleFactor_FastsimEffUp/F"); 
+                razorTree->Branch("topTagScaleFactor_FastsimEffDown", &topTagScaleFactor_FastsimEffDown, "topTagScaleFactor_FastsimEffDown/F"); 
+            }
         }
     } 
     else 
@@ -1808,11 +1811,13 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         //Baseline cuts
         /////////////////////////////////
 
-        // Leading jet PT > 100 GeV
+        // Leading jet PT > 100 GeV. Only select hadronic boxes.
         bool passCuts = false;
         for (auto &vars : mainVars) 
         {
-            if (vars.second->leadingJetPt > 100 && vars.second->box != NONE) passCuts = true;
+            if (vars.second->leadingJetPt > 100 
+                    && (vars.second->box == DiJet || vars.second->box == FourJet || vars.second->box == SixJet)) 
+                passCuts = true;
         }
 
         if (!passCuts) continue;

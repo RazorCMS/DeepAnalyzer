@@ -31,13 +31,14 @@ class RazorVarCollection
         // Member functions 
         void resetVars() 
         { //call for each event
-            MR = -9999.; Rsq = -9999.; dPhiRazor = -9999.;
-            MT2 = -9999.;
-            RsqGenMet = -1;
-            leadingJetPt = -1; subleadingJetPt = -1; 
-            leadingTightMuPt = -1; leadingTightElePt = -1;
-            mT = -1; mTLoose = -1;
-            mTGenMet = -1; mTLooseGenMet = -1;
+            MR = -99.; Rsq = -99.; dPhiRazor = -99.;
+            MT2 = -99.;
+            RsqGenMet = -99.;
+            HT = -99.; MHT = -99.;
+            leadingJetPt = -99.; subleadingJetPt = -99.; 
+            leadingTightMuPt = -99.; leadingTightElePt = -99.;
+            mT = -99.; mTLoose = -99.;
+            mTGenMet = -99.; mTLooseGenMet = -99.;
             nSelectedJets = 0; nBTaggedJets = 0; nJets80 = 0;
             nVetoMuons = 0; nTightMuons = 0; nVetoElectrons = 0; nTightElectrons = 0;
             box = RazorAnalyzer::NONE;
@@ -57,6 +58,8 @@ class RazorVarCollection
             if (tag == "") { conn = ""; } // remove underscore if not needed
             t->Branch(("MR"+conn+tag).c_str(), &MR, ("MR"+conn+tag+"/F").c_str());
             t->Branch(("Rsq"+conn+tag).c_str(), &Rsq, ("Rsq"+conn+tag+"/F").c_str());
+            t->Branch(("HT"+conn+tag).c_str(), &HT, ("HT"+conn+tag+"/F").c_str());
+            t->Branch(("MHT"+conn+tag).c_str(), &MHT, ("MHT"+conn+tag+"/F").c_str());
             t->Branch(("RsqGenMet"+conn+tag).c_str(), &RsqGenMet, ("RsqGenMet"+conn+tag+"/F").c_str());
             t->Branch(("metOverCaloMet"+conn+tag).c_str(), &metOverCaloMet, ("metOverCaloMet"+conn+tag+"/F").c_str());
             t->Branch(("dPhiRazor"+conn+tag).c_str(), &dPhiRazor, ("dPhiRazor"+conn+tag+"/F").c_str());
@@ -94,7 +97,7 @@ class RazorVarCollection
 
         // List of variables
         float MR,Rsq,RsqGenMet,dPhiRazor,leadingJetPt,subleadingJetPt,leadingTightMuPt,leadingTightElePt,mT,mTLoose,mTGenMet, mTLooseGenMet;
-        float MT2;
+        float MT2, HT, MHT;
         int nSelectedJets,nBTaggedJets,nJets80;
         int nVetoMuons, nTightMuons, nVetoElectrons, nTightElectrons;
         float metOverCaloMet;
@@ -220,7 +223,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
 
     //For jet uncertainties
     int nLooseTaus;
-    float met, HT;
+    float met;
     float mjj_leadingJets, mjj_hemispheres;
     float leadingGenLeptonPt;
     float leadingGenLeptonEta;
@@ -253,7 +256,6 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
 
     razorTree->Branch("nVtx", &nVtx, "nVtx/I");
     razorTree->Branch("nLooseTaus", &nLooseTaus, "nLooseTaus/I");
-    razorTree->Branch("HT", &HT, "HT/F");
     razorTree->Branch("met", &met, "met/F");
     razorTree->Branch("mjj_leadingJets", &mjj_leadingJets, "mjj_leadingJets/F");
     razorTree->Branch("mjj_hemispheres", &mjj_hemispheres, "mjj_hemispheres/F");
@@ -1400,14 +1402,29 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         //Compute razor variables and mT
         /////////////////////////////////
 
-        //Get HT
-        HT = 0;
-        for (auto& jet : mainVars[""]->GoodJets) HT += jet.Pt();
+
         double Type1MetXCorr = mainVars[""]->MetXCorr;
         double Type1MetYCorr = mainVars[""]->MetYCorr;
+        
+        
 
         for (auto &vars : mainVars) 
         {
+            // Get HT & MHT
+            float myHT = 0.;
+            float MHTx = 0.;
+            float MHTy = 0.;
+            for (auto& jet : mainVars[""]->GoodJets) 
+            {
+                myHT += jet.Pt();
+                MHTx += jet.Px();
+                MHTy += jet.Py(); 
+            }
+            TLorentzVector MyMHT;
+            MyMHT.SetPxPyPzE(-MHTx, -MHTy, 0, sqrt(pow(MHTx,2) + pow(MHTy,2)));
+            vars.second->MHT = MyMHT.Pt();
+            vars.second->HT = myHT;
+            
             // Make MET	  	  
             double PFMetX = 0;
             double PFMetY = 0;
@@ -1440,8 +1457,8 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             GenMET.SetPxPyPzE(GenMetX, GenMetY, 0, sqrt(GenMetX*GenMetX + GenMetY*GenMetY));	      
 
             // Compute MR, Rsq, dPhiRazor
-            if (GoodPFObjects.size() >= 2 
-                    && GoodJets.size() < 20 //this is a protection again crazy events
+            if (vars.second->GoodPFObjects.size() >= 2 
+                    && vars.second->GoodJets.size() < 20 //this is a protection again crazy events
                ) 
             {
                 vector<TLorentzVector> hemispheres = getHemispheres(vars.second->GoodPFObjects);
@@ -1451,13 +1468,15 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                 if (vars.first == "") 
                 {
                     vars.second->RsqGenMet = computeRsq(hemispheres[0], hemispheres[1], GenMET);
+                    mjj_hemispheres = (hemispheres[0] + hemispheres[1]).M();
                 }
                 vars.second->dPhiRazor = deltaPhi(hemispheres[0].Phi(),hemispheres[1].Phi());
             }           
             vars.second->metOverCaloMet = MyMET.Pt()/metCaloPt;
+            if (vars.first == "") met = MyMET.Pt();
 
             // Compute MT2
-            if (GoodJets.size() >= 2) vars.second->MT2 = calcMT2(0., false, vars.second->GoodJets, MyMET, 2, 3);
+            if (vars.second->GoodJets.size() >= 2) vars.second->MT2 = calcMT2(0., false, vars.second->GoodJets, MyMET, 2, 3);
 
             // Compute transverse mass 
             if (vars.second->nTightMuons + vars.second->nTightElectrons > 0)
@@ -1506,13 +1525,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                                     - cos(deltaPhiLepGenMet)));
                     }
                 }
-            }
 
-            // Additional quantities
-            if (vars.first == "") 
-            {
-                met = MyMET.Pt();
-                mjj_hemispheres = (hemispheres[0] + hemispheres[1]).M();
             }
         }
 

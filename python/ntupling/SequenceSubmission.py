@@ -38,7 +38,7 @@ def send_email(label, tag, data, email, finished=True):
     s.quit()
 
 
-def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force=False, email=''):
+def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force=False, email='', fastSim=False, noZombies=False):
     basedir = os.environ['CMSSW_BASE']+'/src/RazorAnalyzer'
     if not submit: 
         nosub = '--no-sub'
@@ -52,24 +52,30 @@ def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force
         force = '--force'
     else:
         force = ''
-    
+    if fastSim:
+        fastsim = '--fastsim'
+    else:
+        fastsim = ''
+
     if not submit and not skipSub: # --no-sub, only execute the submit command
-        cmd_submit = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--submit', nosub, '--label', label, data]))
+        cmd_submit = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--submit', nosub, '--label', label, data, fastsim]))
         print ' '.join(cmd_submit)
         subprocess.call(cmd_submit)
     
     if submit: 
         if not skipSub: # execute the whole sequence
-            cmd_submit = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--submit', nosub, '--label', label, data]))
+            cmd_submit = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--submit', nosub, '--label', label, data, fastsim]))
             print ' '.join(cmd_submit)
             subprocess.call(cmd_submit)
             job_done = False
             while not job_done:
                 time.sleep(30)
                 job_done = check_bjobs('*'+label+'*')
-            # Before running hadd, we have to check that there are no zombie files in the output.
-            # If there are, remove the zombies and restart the process
-            cmd_zombies = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--find-zombies', nosub, '--label', label, data]))
+
+        # Before running hadd, unless --no-zombies is specified, we have to check that there are no zombie files in the output.
+        # If there are, remove the zombies and restart the process.
+        if not noZombies:
+            cmd_zombies = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--find-zombies', nosub, '--label', label, data, fastsim]))
             print ' '.join(cmd_zombies)
             subprocess.call(cmd_zombies)
             zombieFileName = "Zombies_%s_%s.txt"%(tag, label)
@@ -81,14 +87,17 @@ def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force
                         print "Removing {}".format(line)
                         line = line.replace('\n','')
                         os.remove(line)
-                        #sys.exit("One or more zombie files were found!  See the full list in %s"%zombieFileName)
-                    sub_sequence(tag, isData, submit, label, skipSub, email)
+                    sub_sequence(tag, isData, submit, label, skipSub, email, fastSim)
+
                     if (email is not None): send_email(label, tag, data, email, finished=False)
                     
-        # if skipSub, start the sequence at hadd
-        cmd_hadd = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--hadd', nosub, '--label', label, data, force]))
+        # If skipSub and noZombies are specified, start the sequence at hadd
+        cmd_hadd = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--hadd', nosub, '--label', label, data, force, fastsim]))
         print ' '.join(cmd_hadd)
         subprocess.call(cmd_hadd)
+
+        if fastSim: sys.exit("No normalization for fastsim at the moment!") # stop the script here
+
         if not isData:
             cmd_normalize = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--normalize', nosub, '--label', label, data, force]))
             print ' '.join(cmd_normalize)
@@ -121,7 +130,10 @@ if __name__ == '__main__':
     parser.add_argument('--no-sub', dest = 'noSub', action = 'store_true', help = 'Print commands but do not submit')
     parser.add_argument('--email', help = 'Send email notification after sequence is finished')
     parser.add_argument('--skip-sub', dest = 'skipSub', action = 'store_true', help = 'Start the sequence at the hadd step')
+    parser.add_argument('--fastsim', action = 'store_true', help = 'Action for fastsim')
+    parser.add_argument('--no-zombies', action = 'store_true', dest='noZombies', help = 'We know for sure there is no zombies. Skip --find-zombies step')
+
 
     args = parser.parse_args()
     
-    sub_sequence(args.tag, args.data, (not args.noSub), args.label, args.skipSub, args.force, args.email)
+    sub_sequence(args.tag, args.data, (not args.noSub), args.label, args.skipSub, args.force, args.email, args.fastsim, args.noZombies)

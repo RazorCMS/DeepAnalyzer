@@ -166,6 +166,7 @@ def haddFiles(analyzer,tag,isData=False,force=False,reHLT=False,label=''):
                         for f in jobfiles:
                             skimfile.write(f+'\n')
                     call(['./SkimNtuple', skimfilename, DIRS[tag]+'/jobs', 'ExtraSkim', skim_str])
+                    os.remove(skimfilename)
                     jobfiles = [f.replace('.root', '_ExtraSkim.root') for f in jobfiles]
                 if force:
                     call(['hadd','-f',fname]+jobfiles)
@@ -195,6 +196,7 @@ def normalizeFiles(analyzer,tag,force=False,reHLT=False,label=''):
                     normfile.write(sample+' '+f+'\n')
                     break
     call(['./NormalizeNtuple','ntuples_'+tag+'.txt'])
+    os.remove('ntuples_'+tag+'.txt')
 
 def haddNormalizedFiles(analyzer,tag,force=False,reHLT=False,label=''):
     for process in SAMPLES[tag]:
@@ -261,7 +263,8 @@ def skimNtuples(analyzer,tag,isData=False,label=''):
                 else:
                     print "Input file for",sample,"not found!"
                     print "( looking for",fname,")"
-    skimString = 'MR%s > 300 && Rsq%s > 0.15'%(SUFFIXES[tag],SUFFIXES[tag])
+    skimString = ''
+    #skimString = 'MR%s > 300 && Rsq%s > 0.15'%(SUFFIXES[tag],SUFFIXES[tag])
     print "Skimming with",skimString
     call(['./SkimNtuple','skim_'+tag+'.txt',DIRS[tag],'RazorSkim',skimString])
 
@@ -335,7 +338,7 @@ def makeParser():
 if __name__ == '__main__':
     parser = makeParser()
     parser.add_argument('--queue', default='1nh', help='batch queue')
-    parser.add_argument('--files-per-job', default=6, type=int)
+    parser.add_argument('--files-per-job', default=10, type=int)
     parser.add_argument('--limit', default=-1, type=int,
             help='Max number of jobs to submit')
     args = parser.parse_args()

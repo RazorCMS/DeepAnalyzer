@@ -296,6 +296,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
     if (!isData) {    
         razorTree->Branch("weight", &weight, "weight/F");
         razorTree->Branch("NISRJets", &NISRJets, "NISRJets/I");
+        razorTree->Branch("genHT", &genHT, "genHT/F");
         if (use_full_tree)
         {
             razorTree->Branch("genWeight", &genWeight, "genWeight/F");
@@ -314,7 +315,6 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             razorTree->Branch("subLeadingGenLeptonEta", &subLeadingGenLeptonEta, "subLeadingGenLeptonEta/F");
             razorTree->Branch("subLeadingGenLeptonType", &subLeadingGenLeptonType, "subLeadingGenLeptonType/I");
             razorTree->Branch("NGenBJets", &NGenBJets, "NGenBJets/I");
-            razorTree->Branch("genHT", &genHT, "genHT/F");
             razorTree->Branch("sf_muonEffUp", &sf_muonEffUp, "sf_muonEffUp/F");
             razorTree->Branch("sf_muonEffDown", &sf_muonEffDown, "sf_muonEffDown/F");
             razorTree->Branch("sf_vetoMuonEffUp", &sf_vetoMuonEffUp, "sf_vetoMuonEffUp/F");
@@ -1490,10 +1490,13 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
 
             // Compute dPhiMinJetMET
             double dPhiMin = -1.;
+            int countJet = 0;
             for (auto& jet : vars.second->GoodJets)
             {
                 double phiTemp = fabs(MyMET.DeltaPhi(jet));
                 if (dPhiMin < 0 || phiTemp < dPhiMin) dPhiMin = phiTemp;
+                countJet++;
+                if (countJet >=4) break; // Only use the four leading jets
             }  
             vars.second->dPhiMinJetMET = dPhiMin;
             
@@ -1604,7 +1607,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                 else if (vars.second->nSelectedJets > 3) vars.second->box = LooseLeptonFourJet;
                 else vars.second->box = LooseLeptonDiJet;
             }
-            else if ((passedHadronicTrigger || passedMonojetTrigger) && vars.second->nJets80 >= 1 && nLooseTaus
+            else if (vars.second->nJets80 >= 1 && nLooseTaus
                     + vars.second->nVetoElectrons + vars.second->nVetoMuons 
                     + vars.second->nTightElectrons + vars.second->nTightMuons == 0)
             {
@@ -1815,7 +1818,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         bool passCuts = false;
         for (auto &vars : mainVars) 
         {
-            if (vars.second->leadingJetPt > 100 
+            if (vars.second->leadingJetPt > 100
                     && (vars.second->box == DiJet || vars.second->box == FourJet || vars.second->box == SixJet)) 
                 passCuts = true;
         }
@@ -1835,25 +1838,25 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             if (!Flag_HBHEIsoNoiseFilter) continue;
             if (!Flag_goodVertices) continue;
             if (!Flag_eeBadScFilter) continue;
-            if (!Flag_HBHENoiseFilter) continue;
-            if (!Flag_HBHEIsoNoiseFilter) continue;
-            if (!Flag_badChargedCandidateFilter) continue;
-            if (!Flag_badMuonFilter) continue;
-            if (!Flag_badGlobalMuonFilter) continue;
-            if (!Flag_duplicateMuonFilter) continue;
-            if (!Flag_CSCTightHaloFilter) continue;
-            if (!Flag_hcalLaserEventFilter) continue;
-            if (!Flag_EcalDeadCellTriggerPrimitiveFilter) continue;
-            if (!Flag_goodVertices) continue;
-            if (!Flag_trackingFailureFilter) continue;
-            if (!Flag_eeBadScFilter) continue;
-            if (!Flag_ecalLaserCorrFilter) continue;
-            if (!Flag_trkPOGFilters) continue;
-            if (!Flag_trkPOG_manystripclus53X) continue;
-            if (!Flag_trkPOG_toomanystripclus53X) continue;
-            if (!Flag_trkPOG_logErrorTooManyClusters) continue;
-            if (!Flag_METFilters) continue;
-            if (!Flag_hasEcalGainSwitch) continue;
+//            if (!Flag_HBHENoiseFilter) continue;
+//            if (!Flag_HBHEIsoNoiseFilter) continue;
+//            if (!Flag_badChargedCandidateFilter) continue;
+//            if (!Flag_badMuonFilter) continue;
+//            if (!Flag_badGlobalMuonFilter) continue;
+//            if (!Flag_duplicateMuonFilter) continue;
+//            if (!Flag_CSCTightHaloFilter) continue;
+//            if (!Flag_hcalLaserEventFilter) continue;
+//            if (!Flag_EcalDeadCellTriggerPrimitiveFilter) continue;
+//            if (!Flag_goodVertices) continue;
+//            if (!Flag_trackingFailureFilter) continue;
+//            if (!Flag_eeBadScFilter) continue;
+//            if (!Flag_ecalLaserCorrFilter) continue;
+//            if (!Flag_trkPOGFilters) continue;
+//            if (!Flag_trkPOG_manystripclus53X) continue;
+//            if (!Flag_trkPOG_toomanystripclus53X) continue;
+//            if (!Flag_trkPOG_logErrorTooManyClusters) continue;
+//            if (!Flag_METFilters) continue;
+//            if (!Flag_hasEcalGainSwitch) continue;
         }
 
         //Emulate the 2017 trigger

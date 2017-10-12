@@ -10,6 +10,8 @@
 #include "TLorentzVector.h"
 #include "TH1F.h"
 
+bool use_full_tree = false;
+bool use_sys = false;
 class ControlSampleEvents {
   
  public:
@@ -119,7 +121,7 @@ class ControlSampleEvents {
   Bool_t                  lep2PassTightIso;
   Float_t                 lep2MinDRToBJet;     
   Float_t                 lep2Activity;
-  Int_t                   NGenBJets;
+  Int_t                   nGenBJets;
   TLorentzVector          bjet1;
   TLorentzVector          bjet2;
   Bool_t                  bjet1PassLoose;
@@ -129,7 +131,9 @@ class ControlSampleEvents {
   Bool_t                  bjet2PassMedium;
   Bool_t                  bjet2PassTight;
   TLorentzVector          jet1;
-  TLorentzVector          jet2;      
+  TLorentzVector          jet2;     
+  Float_t                 leadingJetPt;
+  Float_t                 subleadingJetPt; 
   Bool_t                  jet1PassCSVLoose;
   Bool_t                  jet1PassCSVMedium;
   Bool_t                  jet1PassCSVTight;
@@ -152,14 +156,14 @@ class ControlSampleEvents {
   Float_t                 METnoHF;
   Float_t                 MET_NoDilepton;
   Float_t                 MET_NoLeadJet;
-  Float_t                 minDPhi;
-  Float_t                 minDPhiN;
+  Float_t                 dPhiMinJetMET;
+  Float_t                 dPhiMinJetMETN;
   Float_t                 dPhiRazor;
-  UInt_t                  NJets40;
-  UInt_t                  NJets80;
-  UInt_t                  NBJetsLoose;
-  UInt_t                  NBJetsMedium;
-  UInt_t                  NBJetsTight;
+  UInt_t                  nSelectedJets;
+  UInt_t                  nJets80;
+  UInt_t                  nBJetsLoose;
+  UInt_t                  nBJetsMedium;
+  UInt_t                  nBJetsTight;
   Float_t                 HT;
   Float_t                 MHT;
   Float_t                 MHTnoHF;
@@ -201,7 +205,7 @@ class ControlSampleEvents {
   Float_t                 MT2;
   Float_t                 genJetMR;
   Float_t                 genJetHT;
-
+  Float_t                 alphaT;
   TLorentzVector          pho1;
   TLorentzVector          pho2;
   Bool_t                  pho1PassLoose;
@@ -239,12 +243,12 @@ class ControlSampleEvents {
   Float_t                 METPhi;
   Float_t                 METnoHFPhi;
   Float_t                 METRawPhi;
-  UInt_t                  NJets_NoZ;
-  UInt_t                  NJets_NoW;
-  UInt_t                  NJets_NoPho;
-  UInt_t                  NJets80_NoZ;
-  UInt_t                  NJets80_NoW;
-  UInt_t                  NJets80_NoPho;
+  UInt_t                  nJets_NoZ;
+  UInt_t                  nJets_NoW;
+  UInt_t                  nJets_NoPho;
+  UInt_t                  nJets80_NoZ;
+  UInt_t                  nJets80_NoW;
+  UInt_t                  nJets80_NoPho;
   Int_t                   pho1_motherID;
   Float_t                 pho1_sigmaietaieta; 
   Float_t                 pho1_chargediso;
@@ -387,7 +391,7 @@ class ControlSampleEvents {
     lep2PassTightIso     = 0.0;
     lep2MinDRToBJet      = 0.0;
     lep2Activity         = 0.0;
-    NGenBJets            = -1;
+    nGenBJets            = -1;
     bjet1                = TLorentzVector();
     bjet2                = TLorentzVector();
     bjet1PassLoose       = 0.0;
@@ -398,6 +402,8 @@ class ControlSampleEvents {
     bjet2PassTight       = 0.0;
     jet1                 = TLorentzVector();
     jet2                 = TLorentzVector();
+    leadingJetPt         = 0.0;
+    subleadingJetPt      = 0.0;
     jet1PassCSVLoose     = 0.0;
     jet1PassCSVMedium    = 0.0;
     jet1PassCSVTight     = 0.0;
@@ -408,8 +414,8 @@ class ControlSampleEvents {
     nTopTags             = 0;
     wTagScaleFactor      = 1.0; 
     topTagScaleFactor    = 1.0;
-    MR                   = 0.0;
-    Rsq                  = 0.0;
+    MR                   = -99.;
+    Rsq                  = -99.;
     RsqnoHF              = 0.0;
     MR_NoDilepton        = 0.0;
     Rsq_NoDilepton       = 0.0;
@@ -420,14 +426,14 @@ class ControlSampleEvents {
     METRaw               = 0.0;
     MET_NoDilepton       = 0.0;
     MET_NoLeadJet        = 0.0;
-    minDPhi              = 0.0;
-    minDPhiN             = 0.0;
+    dPhiMinJetMET              = 0.0;
+    dPhiMinJetMETN             = 0.0;
     dPhiRazor            = 0.0;
-    NJets40              = 0;
-    NJets80              = 0;
-    NBJetsLoose          = 0;
-    NBJetsMedium         = 0;
-    NBJetsTight          = 0;
+    nSelectedJets              = 0;
+    nJets80              = 0;
+    nBJetsLoose          = 0;
+    nBJetsMedium         = 0;
+    nBJetsTight          = 0;
     HT                   = 0.0;      
     MHT                  = 0.;
     MHTnoHF              = 0.;
@@ -466,6 +472,7 @@ class ControlSampleEvents {
     genZpt          = -99.;
     genZphi         = -99.;
     MT2             = -99.;
+    alphaT          = -99.;
     genJetHT        = -99.;
     genJetMR        = -99.;
 
@@ -508,12 +515,12 @@ class ControlSampleEvents {
     METnoHFPhi = -99.;
     u1 = -99.;
     u2 = -99.;
-    NJets_NoZ = 0; 
-    NJets_NoW = 0; 
-    NJets_NoPho = 0 ; 
-    NJets80_NoZ = 0 ; 
-    NJets80_NoW = 0 ; 
-    NJets80_NoPho = 0 ; 
+    nJets_NoZ = 0; 
+    nJets_NoW = 0; 
+    nJets_NoPho = 0 ; 
+    nJets80_NoZ = 0 ; 
+    nJets80_NoW = 0 ; 
+    nJets80_NoPho = 0 ; 
     pho1_motherID = 0;
     pho1_sigmaietaieta = -999.;
     pho1_chargediso = -999.;
@@ -568,24 +575,31 @@ class ControlSampleEvents {
   void LoadTree(const char* file, int treeType = kTreeType_Default){
     f_ = TFile::Open(file);
     assert(f_);
-    tree_ = dynamic_cast<TTree*>(f_->Get("ControlSampleEvent"));
+    tree_ = dynamic_cast<TTree*>(f_->Get("InclusiveControlRegion"));
     InitTree(treeType);
     assert(tree_);
   }
     
   /// create a ControlSampleEvents
   void CreateTree(int treeType = kTreeType_Default){
-    tree_ = new TTree("ControlSampleEvent","ControlSampleEvent");
+    tree_ = new TTree("InclusiveControlRegion","InclusiveControlRegion");
     f_ = 0;
 
     //book the branches that go in all types of trees
     tree_->Branch("option",&option,"option/I");
-    tree_->Branch("genWeight",&genWeight,"genWeight/F");
     tree_->Branch("weight",&weight,"weight/F");
-    tree_->Branch("pileupWeight",&pileupWeight,"pileupWeight/F");
+
+    if (use_full_tree)
+    {
+        tree_->Branch("genWeight",&genWeight,"genWeight/F");
+        tree_->Branch("pileupWeight",&pileupWeight,"pileupWeight/F");
+    }
     tree_->Branch("btagW",&btagW,"btagW/F");
-    tree_->Branch("btagW_up",&btagW_up,"btagW_up/F");
-    tree_->Branch("btagW_down",&btagW_down,"btagW_down/F");
+    if (use_sys)
+    {
+        tree_->Branch("btagW_up",&btagW_up,"btagW_up/F");
+        tree_->Branch("btagW_down",&btagW_down,"btagW_down/F");
+    }
     tree_->Branch("run",&run,"run/i");
     tree_->Branch("lumi",&lumi,"lumi/i");
     tree_->Branch("event",&event,"event/i");
@@ -594,38 +608,47 @@ class ControlSampleEvents {
     tree_->Branch("MR",&MR,"MR/F");
     tree_->Branch("Rsq",&Rsq,"Rsq/F");
     tree_->Branch("MET",&MET,"MET/F");
-    tree_->Branch("NJets40",&NJets40,"NJets40/i");
-    tree_->Branch("NJets80",&NJets80,"NJets80/i");
-    tree_->Branch("NGenBJets",&NGenBJets,"NGenBJets/I");
-    tree_->Branch("NBJetsLoose",&NBJetsLoose,"NBJetsLoose/i");
-    tree_->Branch("NBJetsMedium",&NBJetsMedium,"NBJetsMedium/i");
-    tree_->Branch("NBJetsTight",&NBJetsTight,"NBJetsTight/i");
+    tree_->Branch("nSelectedJets",&nSelectedJets,"nSelectedJets/i");
+    tree_->Branch("nJets80",&nJets80,"nJets80/i");
+    tree_->Branch("nGenBJets",&nGenBJets,"nGenBJets/I");
+    tree_->Branch("nBJetsLoose",&nBJetsLoose,"nBJetsLoose/i");
+    tree_->Branch("nBJetsMedium",&nBJetsMedium,"nBJetsMedium/i");
+    tree_->Branch("nBJetsTight",&nBJetsTight,"nBJetsTight/i");
     tree_->Branch("genHT",&genHT,"genHT/F");
     tree_->Branch("NISRJets",&NISRJets,"NISRJets/I");
     tree_->Branch("nWTags", &nWTags, "nWTags/I");
     tree_->Branch("nTopTags", &nTopTags, "nTopTags/I");
-    tree_->Branch("wTagScaleFactor", &wTagScaleFactor, "wTagScaleFactor/F");
-    tree_->Branch("topTagScaleFactor", &topTagScaleFactor, "topTagScaleFactor/F");
-    // noise filters
-    tree_->Branch("Flag_HBHENoiseFilter", &Flag_HBHENoiseFilter,"Flag_HBHENoiseFilter/O");
-    tree_->Branch("Flag_HBHEIsoNoiseFilter", &Flag_HBHEIsoNoiseFilter,"Flag_HBHEIsoNoiseFilter/O");
-    tree_->Branch("Flag_badChargedCandidateFilter", &Flag_badChargedCandidateFilter,"Flag_badChargedCandidateFilter/O");
-    tree_->Branch("Flag_badMuonFilter", &Flag_badMuonFilter,"Flag_badMuonFilter/O");
-    tree_->Branch("Flag_badGlobalMuonFilter", &Flag_badGlobalMuonFilter,"Flag_badGlobalMuonFilter/O");
-    tree_->Branch("Flag_duplicateMuonFilter", &Flag_duplicateMuonFilter,"Flag_duplicateMuonFilter/O");
-    tree_->Branch("Flag_CSCTightHaloFilter", &Flag_CSCTightHaloFilter,"Flag_CSCTightHaloFilter/O");
-    tree_->Branch("Flag_hcalLaserEventFilter", &Flag_hcalLaserEventFilter,"Flag_hcalLaserEventFilter/O");
-    tree_->Branch("Flag_EcalDeadCellTriggerPrimitiveFilter", &Flag_EcalDeadCellTriggerPrimitiveFilter,"Flag_EcalDeadCellTriggerPrimitiveFilter/O");
-    tree_->Branch("Flag_goodVertices", &Flag_goodVertices,"Flag_goodVertices/O");
-    tree_->Branch("Flag_trackingFailureFilter", &Flag_trackingFailureFilter,"Flag_trackingFailureFilter/O");
-    tree_->Branch("Flag_eeBadScFilter", &Flag_eeBadScFilter,"Flag_eeBadScFilter/O");
-    tree_->Branch("Flag_ecalLaserCorrFilter", &Flag_ecalLaserCorrFilter,"Flag_ecalLaserCorrFilter/O");
-    tree_->Branch("Flag_trkPOGFilters", &Flag_trkPOGFilters,"Flag_trkPOGFilters/O");
-    tree_->Branch("Flag_trkPOG_manystripclus53X", &Flag_trkPOG_manystripclus53X,"Flag_trkPOG_manystripclus53X/O");
-    tree_->Branch("Flag_trkPOG_toomanystripclus53X", &Flag_trkPOG_toomanystripclus53X,"Flag_trkPOG_toomanystripclus53X/O");
-    tree_->Branch("Flag_trkPOG_logErrorTooManyClusters", &Flag_trkPOG_logErrorTooManyClusters,"Flag_trkPOG_logErrorTooManyClusters/O");
-    tree_->Branch("Flag_METFilters", &Flag_METFilters,"Flag_METFilters/O");	
-
+    tree_->Branch("HT",&HT,"HT/F");
+    tree_->Branch("MHT", &MHT, "MHT/F");
+    tree_->Branch("MT2", &MT2, "MT2/F");
+    tree_->Branch("alphaT", &alphaT, "alphaT/F");
+    if (use_full_tree)
+    {
+        tree_->Branch("wTagScaleFactor", &wTagScaleFactor, "wTagScaleFactor/F");
+        tree_->Branch("topTagScaleFactor", &topTagScaleFactor, "topTagScaleFactor/F");
+        // noise filters
+        tree_->Branch("Flag_HBHENoiseFilter", &Flag_HBHENoiseFilter,"Flag_HBHENoiseFilter/O");
+        tree_->Branch("Flag_HBHEIsoNoiseFilter", &Flag_HBHEIsoNoiseFilter,"Flag_HBHEIsoNoiseFilter/O");
+        tree_->Branch("Flag_badChargedCandidateFilter", &Flag_badChargedCandidateFilter,"Flag_badChargedCandidateFilter/O");
+        tree_->Branch("Flag_badMuonFilter", &Flag_badMuonFilter,"Flag_badMuonFilter/O");
+        tree_->Branch("Flag_badGlobalMuonFilter", &Flag_badGlobalMuonFilter,"Flag_badGlobalMuonFilter/O");
+        tree_->Branch("Flag_duplicateMuonFilter", &Flag_duplicateMuonFilter,"Flag_duplicateMuonFilter/O");
+        tree_->Branch("Flag_CSCTightHaloFilter", &Flag_CSCTightHaloFilter,"Flag_CSCTightHaloFilter/O");
+        tree_->Branch("Flag_hcalLaserEventFilter", &Flag_hcalLaserEventFilter,"Flag_hcalLaserEventFilter/O");
+        tree_->Branch("Flag_EcalDeadCellTriggerPrimitiveFilter", &Flag_EcalDeadCellTriggerPrimitiveFilter,"Flag_EcalDeadCellTriggerPrimitiveFilter/O");
+        tree_->Branch("Flag_goodVertices", &Flag_goodVertices,"Flag_goodVertices/O");
+        tree_->Branch("Flag_trackingFailureFilter", &Flag_trackingFailureFilter,"Flag_trackingFailureFilter/O");
+        tree_->Branch("Flag_eeBadScFilter", &Flag_eeBadScFilter,"Flag_eeBadScFilter/O");
+        tree_->Branch("Flag_ecalLaserCorrFilter", &Flag_ecalLaserCorrFilter,"Flag_ecalLaserCorrFilter/O");
+        tree_->Branch("Flag_trkPOGFilters", &Flag_trkPOGFilters,"Flag_trkPOGFilters/O");
+        tree_->Branch("Flag_trkPOG_manystripclus53X", &Flag_trkPOG_manystripclus53X,"Flag_trkPOG_manystripclus53X/O");
+        tree_->Branch("Flag_trkPOG_toomanystripclus53X", &Flag_trkPOG_toomanystripclus53X,"Flag_trkPOG_toomanystripclus53X/O");
+        tree_->Branch("Flag_trkPOG_logErrorTooManyClusters", &Flag_trkPOG_logErrorTooManyClusters,"Flag_trkPOG_logErrorTooManyClusters/O");
+        tree_->Branch("Flag_METFilters", &Flag_METFilters,"Flag_METFilters/O");	
+        tree_->Branch("MHTnoHF", &MHTnoHF, "MHTnoHF/F");
+        tree_->Branch("METnoHF", &METnoHF, "METnoHF/F");
+        tree_->Branch("RsqnoHF", &RsqnoHF, "RsqnoHF/F");
+    }   
     // book the branches that go into only One Lepton trees
     if (treeType == kTreeType_OneLepton_Reduced 
 	|| treeType == kTreeType_ZeroLepton_Reduced 
@@ -650,44 +673,42 @@ class ControlSampleEvents {
       tree_->Branch("MET",&MET,"MET/F");
       tree_->Branch("METPhi",&METPhi,"METPhi/F");
       tree_->Branch("HLTDecision",&HLTDecision,"HLTDecision[300]/O");
-      tree_->Branch("HT",&HT,"HT/F");
       tree_->Branch("lep1Pt",&lep1Pt,"lep1Pt/F");
       tree_->Branch("lep1Eta",&lep1Eta,"lep1Eta/F");
-      tree_->Branch("METnoHF", &METnoHF, "METnoHF/F");
-      tree_->Branch("RsqnoHF", &RsqnoHF, "RsqnoHF/F");
-      tree_->Branch("MHT", &MHT, "MHT/F");
-      tree_->Branch("MHTnoHF", &MHTnoHF, "MHTnoHF/F");
       tree_->Branch("lep1" ,&lep1Ptr);
 
-      tree_->Branch("metType1PtJetResUp", &metType1PtJetResUp, "metType1PtJetResUp/F");
-      tree_->Branch("metType1PtJetResDown", &metType1PtJetResDown, "metType1PtJetResDown/F");
-      tree_->Branch("metType1PtJetEnUp", &metType1PtJetEnUp, "metType1PtJetEnUp/F");
-      tree_->Branch("metType1PtJetEnDown", &metType1PtJetEnDown, "metType1PtJetEnDown/F");
-      tree_->Branch("metType1PtMuonEnUp", &metType1PtMuonEnUp, "metType1PtMuonEnUp/F");
-      tree_->Branch("metType1PtMuonEnDown", &metType1PtMuonEnDown, "metType1PtMuonEnDown/F");
-      tree_->Branch("metType1PtElectronEnUp", &metType1PtElectronEnUp, "metType1PtElectronEnUp/F");
-      tree_->Branch("metType1PtElectronEnDown", &metType1PtElectronEnDown, "metType1PtElectronEnDown/F");
-      tree_->Branch("metType1PtTauEnUp", &metType1PtTauEnUp, "metType1PtTauEnUp/F");
-      tree_->Branch("metType1PtTauEnDown", &metType1PtTauEnDown, "metType1PtTauEnDown/F");
-      tree_->Branch("metType1PtUnclusteredEnUp", &metType1PtUnclusteredEnUp, "metType1PtUnclusteredEnUp/F");
-      tree_->Branch("metType1PtUnclusteredEnDown", &metType1PtUnclusteredEnDown, "metType1PtUnclusteredEnDown/F");
-      tree_->Branch("metType1PtPhotonEnUp", &metType1PtPhotonEnUp, "metType1PtPhotonEnUp/F");
-      tree_->Branch("metType1PtPhotonEnDown", &metType1PtPhotonEnDown, "metType1PtPhotonEnDown/F");
-      
-      tree_->Branch("metType1PhiJetResUp", &metType1PhiJetResUp, "metType1PhiJetResUp/F");
-      tree_->Branch("metType1PhiJetResDown", &metType1PhiJetResDown, "metType1PhiJetResDown/F");
-      tree_->Branch("metType1PhiJetEnUp", &metType1PhiJetEnUp, "metType1PhiJetEnUp/F");
-      tree_->Branch("metType1PhiJetEnDown", &metType1PhiJetEnDown, "metType1PhiJetEnDown/F");
-      tree_->Branch("metType1PhiMuonEnUp", &metType1PhiMuonEnUp, "metType1PhiMuonEnUp/F");
-      tree_->Branch("metType1PhiMuonEnDown", &metType1PhiMuonEnDown, "metType1PhiMuonEnDown/F");
-      tree_->Branch("metType1PhiElectronEnUp", &metType1PhiElectronEnUp, "metType1PhiElectronEnUp/F");
-      tree_->Branch("metType1PhiElectronEnDown", &metType1PhiElectronEnDown, "metType1PhiElectronEnDown/F");
-      tree_->Branch("metType1PhiTauEnUp", &metType1PhiTauEnUp, "metType1PhiTauEnUp/F");
-      tree_->Branch("metType1PhiTauEnDown", &metType1PhiTauEnDown, "metType1PhiTauEnDown/F");
-      tree_->Branch("metType1PhiUnclusteredEnUp", &metType1PhiUnclusteredEnUp, "metType1PhiUnclusteredEnUp/F");
-      tree_->Branch("metType1PhiUnclusteredEnDown", &metType1PhiUnclusteredEnDown, "metType1PhiUnclusteredEnDown/F");
-      tree_->Branch("metType1PhiPhotonEnUp", &metType1PhiPhotonEnUp, "metType1PhiPhotonEnUp/F");
-      tree_->Branch("metType1PhiPhotonEnDown", &metType1PhiPhotonEnDown, "metType1PhiPhotonEnDown/F");
+      if (use_sys)
+      {
+          tree_->Branch("metType1PtJetResUp", &metType1PtJetResUp, "metType1PtJetResUp/F");
+          tree_->Branch("metType1PtJetResDown", &metType1PtJetResDown, "metType1PtJetResDown/F");
+          tree_->Branch("metType1PtJetEnUp", &metType1PtJetEnUp, "metType1PtJetEnUp/F");
+          tree_->Branch("metType1PtJetEnDown", &metType1PtJetEnDown, "metType1PtJetEnDown/F");
+          tree_->Branch("metType1PtMuonEnUp", &metType1PtMuonEnUp, "metType1PtMuonEnUp/F");
+          tree_->Branch("metType1PtMuonEnDown", &metType1PtMuonEnDown, "metType1PtMuonEnDown/F");
+          tree_->Branch("metType1PtElectronEnUp", &metType1PtElectronEnUp, "metType1PtElectronEnUp/F");
+          tree_->Branch("metType1PtElectronEnDown", &metType1PtElectronEnDown, "metType1PtElectronEnDown/F");
+          tree_->Branch("metType1PtTauEnUp", &metType1PtTauEnUp, "metType1PtTauEnUp/F");
+          tree_->Branch("metType1PtTauEnDown", &metType1PtTauEnDown, "metType1PtTauEnDown/F");
+          tree_->Branch("metType1PtUnclusteredEnUp", &metType1PtUnclusteredEnUp, "metType1PtUnclusteredEnUp/F");
+          tree_->Branch("metType1PtUnclusteredEnDown", &metType1PtUnclusteredEnDown, "metType1PtUnclusteredEnDown/F");
+          tree_->Branch("metType1PtPhotonEnUp", &metType1PtPhotonEnUp, "metType1PtPhotonEnUp/F");
+          tree_->Branch("metType1PtPhotonEnDown", &metType1PtPhotonEnDown, "metType1PtPhotonEnDown/F");
+
+          tree_->Branch("metType1PhiJetResUp", &metType1PhiJetResUp, "metType1PhiJetResUp/F");
+          tree_->Branch("metType1PhiJetResDown", &metType1PhiJetResDown, "metType1PhiJetResDown/F");
+          tree_->Branch("metType1PhiJetEnUp", &metType1PhiJetEnUp, "metType1PhiJetEnUp/F");
+          tree_->Branch("metType1PhiJetEnDown", &metType1PhiJetEnDown, "metType1PhiJetEnDown/F");
+          tree_->Branch("metType1PhiMuonEnUp", &metType1PhiMuonEnUp, "metType1PhiMuonEnUp/F");
+          tree_->Branch("metType1PhiMuonEnDown", &metType1PhiMuonEnDown, "metType1PhiMuonEnDown/F");
+          tree_->Branch("metType1PhiElectronEnUp", &metType1PhiElectronEnUp, "metType1PhiElectronEnUp/F");
+          tree_->Branch("metType1PhiElectronEnDown", &metType1PhiElectronEnDown, "metType1PhiElectronEnDown/F");
+          tree_->Branch("metType1PhiTauEnUp", &metType1PhiTauEnUp, "metType1PhiTauEnUp/F");
+          tree_->Branch("metType1PhiTauEnDown", &metType1PhiTauEnDown, "metType1PhiTauEnDown/F");
+          tree_->Branch("metType1PhiUnclusteredEnUp", &metType1PhiUnclusteredEnUp, "metType1PhiUnclusteredEnUp/F");
+          tree_->Branch("metType1PhiUnclusteredEnDown", &metType1PhiUnclusteredEnDown, "metType1PhiUnclusteredEnDown/F");
+          tree_->Branch("metType1PhiPhotonEnUp", &metType1PhiPhotonEnUp, "metType1PhiPhotonEnUp/F");
+          tree_->Branch("metType1PhiPhotonEnDown", &metType1PhiPhotonEnDown, "metType1PhiPhotonEnDown/F");
+      }
    }
   
     if (treeType == kTreeType_OneLepton_Full
@@ -717,33 +738,39 @@ class ControlSampleEvents {
       tree_->Branch("muonRecoEffWeight",&muonRecoEffWeight,"muonRecoEffWeight/F");
       tree_->Branch("MET",&MET,"MET/F");
       tree_->Branch("METPhi",&METPhi,"METPhi/F");
-      tree_->Branch("METnoHF", &METnoHF, "METnoHF/F");
-      tree_->Branch("METnoHFPhi",&METnoHFPhi,"METnoHFPhi/F");
-      tree_->Branch("METRaw",&METRaw,"METRaw/F");
-      tree_->Branch("METRawPhi",&METRawPhi,"METRawPhi/F");
+      tree_->Branch("leadingJetPt",&leadingJetPt,"leadingJetPt/F");
+      tree_->Branch("subleadingJetPt",&subleadingJetPt,"subleadingJetPt/F");
 
-      tree_->Branch("bjet1PassLoose",&bjet1PassLoose,"bjet1PassLoose/O");
-      tree_->Branch("bjet1PassMedium",&bjet1PassMedium,"bjet1PassMedium/O");
-      tree_->Branch("bjet1PassTight",&bjet1PassTight,"bjet1PassTight/O");
-      tree_->Branch("bjet2PassLoose",&bjet2PassLoose,"bjet2PassLoose/O");
-      tree_->Branch("bjet2PassMedium",&bjet2PassMedium,"bjet2PassMedium/O");
-      tree_->Branch("bjet2PassTight",&bjet2PassTight,"bjet2PassTight/O");
-      tree_->Branch("jet1PassCSVLoose",&jet1PassCSVLoose,"jet1PassCSVLoose/O");
-      tree_->Branch("jet1PassCSVMedium",&jet1PassCSVMedium,"jet1PassCSVMedium/O");
-      tree_->Branch("jet1PassCSVTight",&jet1PassCSVTight,"jet1PassCSVTight/O");
-      tree_->Branch("jet2PassCSVLoose",&jet2PassCSVLoose,"jet2PassCSVLoose/O");
-      tree_->Branch("jet2PassCSVMedium",&jet2PassCSVMedium,"jet2PassCSVMedium/O");
-      tree_->Branch("jet2PassCSVTight",&jet2PassCSVTight,"jet2PassCSVTight/O");
+      if (use_full_tree)
+      {
+          tree_->Branch("METnoHF", &METnoHF, "METnoHF/F");
+          tree_->Branch("METnoHFPhi",&METnoHFPhi,"METnoHFPhi/F");
+          tree_->Branch("METRaw",&METRaw,"METRaw/F");
+          tree_->Branch("METRawPhi",&METRawPhi,"METRawPhi/F");
+          tree_->Branch("bjet1PassLoose",&bjet1PassLoose,"bjet1PassLoose/O");
+          tree_->Branch("bjet1PassMedium",&bjet1PassMedium,"bjet1PassMedium/O");
+          tree_->Branch("bjet1PassTight",&bjet1PassTight,"bjet1PassTight/O");
+          tree_->Branch("bjet2PassLoose",&bjet2PassLoose,"bjet2PassLoose/O");
+          tree_->Branch("bjet2PassMedium",&bjet2PassMedium,"bjet2PassMedium/O");
+          tree_->Branch("bjet2PassTight",&bjet2PassTight,"bjet2PassTight/O");
+          tree_->Branch("jet1PassCSVLoose",&jet1PassCSVLoose,"jet1PassCSVLoose/O");
+          tree_->Branch("jet1PassCSVMedium",&jet1PassCSVMedium,"jet1PassCSVMedium/O");
+          tree_->Branch("jet1PassCSVTight",&jet1PassCSVTight,"jet1PassCSVTight/O");
+          tree_->Branch("jet2PassCSVLoose",&jet2PassCSVLoose,"jet2PassCSVLoose/O");
+          tree_->Branch("jet2PassCSVMedium",&jet2PassCSVMedium,"jet2PassCSVMedium/O");
+          tree_->Branch("jet2PassCSVTight",&jet2PassCSVTight,"jet2PassCSVTight/O");
+          tree_->Branch("bjet1",   "TLorentzVector", &bjet1Ptr);
+          tree_->Branch("bjet2",   "TLorentzVector", &bjet2Ptr);
+          tree_->Branch("jet1",    "TLorentzVector", &jet1Ptr);
+          tree_->Branch("jet2",    "TLorentzVector", &jet2Ptr);
+      }
       tree_->Branch("dPhiRazor",&dPhiRazor,"dPhiRazor/F");
+      tree_->Branch("dPhiMinJetMET",&dPhiMinJetMET,"dPhiMinJetMET/F");
       tree_->Branch("HT",&HT,"HT/F");	  
       tree_->Branch("genWpt",&genWpt,"genWpt/F");
       tree_->Branch("genWphi",&genWphi,"genWphi/F");
       tree_->Branch("genlep1", "TLorentzVector", &genlep1Ptr);
       tree_->Branch("lep1",    "TLorentzVector", &lep1Ptr);
-      tree_->Branch("bjet1",   "TLorentzVector", &bjet1Ptr);
-      tree_->Branch("bjet2",   "TLorentzVector", &bjet2Ptr);
-      tree_->Branch("jet1",    "TLorentzVector", &jet1Ptr);
-      tree_->Branch("jet2",    "TLorentzVector", &jet2Ptr);
     }
   
     if (treeType == kTreeType_Dilepton_Full
@@ -849,8 +876,8 @@ class ControlSampleEvents {
       tree_->Branch("METPhi_NoW",&METPhi_NoW,"METPhi_NoW/F");
       tree_->Branch("HT_NoW",&HT_NoW,"HT_NoW/F");
       tree_->Branch("dPhiRazor_NoW",&dPhiRazor_NoW,"dPhiRazor_NoW/F");
-      tree_->Branch("NJets_NoW",&NJets_NoW,"NJets_NoW/i");
-      tree_->Branch("NJets80_NoW",&NJets80_NoW,"NJets80_NoW/i");
+      tree_->Branch("nJets_NoW",&nJets_NoW,"nJets_NoW/i");
+      tree_->Branch("nJets80_NoW",&nJets80_NoW,"nJets80_NoW/i");
       tree_->Branch("nVetoMuons",&nVetoMuons,"nVetoMuons/i");
       tree_->Branch("nLooseMuons",&nLooseMuons,"nLooseMuons/i");
       tree_->Branch("nMediumMuons",&nMediumMuons,"nMediumMuons/i");
@@ -897,8 +924,8 @@ class ControlSampleEvents {
       tree_->Branch("recoZpt",&recoZpt,"recoZpt/F");
       tree_->Branch("genZpt",&genZpt,"genZpt/F");
       tree_->Branch("genZphi",&genZphi,"genZphi/F");
-      tree_->Branch("NJets_NoZ",&NJets_NoZ,"NJets_NoZ/i");
-      tree_->Branch("NJets80_NoZ",&NJets80_NoZ,"NJets80_NoZ/i");
+      tree_->Branch("nJets_NoZ",&nJets_NoZ,"nJets_NoZ/i");
+      tree_->Branch("nJets80_NoZ",&nJets80_NoZ,"nJets80_NoZ/i");
       tree_->Branch("nVetoMuons",&nVetoMuons,"nVetoMuons/i");
       tree_->Branch("nLooseMuons",&nLooseMuons,"nLooseMuons/i");
       tree_->Branch("nMediumMuons",&nMediumMuons,"nMediumMuons/i");
@@ -923,12 +950,12 @@ class ControlSampleEvents {
       tree_->Branch("METPhi_NoPho",&METPhi_NoPho,"METPhi_NoPho/F");
       tree_->Branch("HT_NoPho",&HT_NoPho,"HT_NoPho/F");
       tree_->Branch("dPhiRazor_NoPho",&dPhiRazor_NoPho,"dPhiRazor_NoPho/F");
-      tree_->Branch("NJets_NoPho",&NJets_NoPho,"NJets_NoPho/i");
-      tree_->Branch("NJets80_NoPho",&NJets80_NoPho,"NJets80_NoPho/i");
+      tree_->Branch("nJets_NoPho",&nJets_NoPho,"nJets_NoPho/i");
+      tree_->Branch("nJets80_NoPho",&nJets80_NoPho,"nJets80_NoPho/i");
 
       tree_->Branch("nSelectedPhotons",&nSelectedPhotons,"nSelectedPhotons/i");
-      tree_->Branch("NJets_NoPho",&NJets_NoPho,"NJets_NoPho/i");
-      tree_->Branch("NJets80_NoPho",&NJets80_NoPho,"NJets80_NoPho/i");
+      tree_->Branch("nJets_NoPho",&nJets_NoPho,"nJets_NoPho/i");
+      tree_->Branch("nJets80_NoPho",&nJets80_NoPho,"nJets80_NoPho/i");
       tree_->Branch("pho1_motherID",&pho1_motherID,"pho1_motherID/I");
       tree_->Branch("pho1_sigmaietaieta",&pho1_sigmaietaieta,"pho1_sigmaietaieta/F");
       tree_->Branch("pho1_chargediso",&pho1_chargediso,"pho1_chargediso/F");
@@ -967,34 +994,36 @@ class ControlSampleEvents {
     tree_->SetBranchAddress("NPV",&NPV);
     tree_->SetBranchAddress("MR",&MR);
     tree_->SetBranchAddress("Rsq",&Rsq);
-    tree_->SetBranchAddress("NJets40",&NJets40);
-    tree_->SetBranchAddress("NJets80",&NJets80);
-    tree_->SetBranchAddress("NGenBJets",&NGenBJets);
-    tree_->SetBranchAddress("NBJetsLoose",&NBJetsLoose);
-    tree_->SetBranchAddress("NBJetsMedium",&NBJetsMedium);
-    tree_->SetBranchAddress("NBJetsTight",&NBJetsTight);
+    tree_->SetBranchAddress("nSelectedJets",&nSelectedJets);
+    tree_->SetBranchAddress("nJets80",&nJets80);
+    tree_->SetBranchAddress("nGenBJets",&nGenBJets);
+    tree_->SetBranchAddress("nBJetsLoose",&nBJetsLoose);
+    tree_->SetBranchAddress("nBJetsMedium",&nBJetsMedium);
+    tree_->SetBranchAddress("nBJetsTight",&nBJetsTight);
     tree_->SetBranchAddress("genHT",&genHT);
     tree_->SetBranchAddress("NISRJets",&NISRJets);
 
-    tree_->SetBranchAddress("Flag_HBHENoiseFilter", &Flag_HBHENoiseFilter);
-    tree_->SetBranchAddress("Flag_HBHEIsoNoiseFilter", &Flag_HBHEIsoNoiseFilter);
-    tree_->SetBranchAddress("Flag_badChargedCandidateFilter", &Flag_badChargedCandidateFilter);
-    tree_->SetBranchAddress("Flag_badMuonFilter", &Flag_badMuonFilter);
-    tree_->SetBranchAddress("Flag_badGlobalMuonFilter", &Flag_badGlobalMuonFilter);
-    tree_->SetBranchAddress("Flag_duplicateMuonFilter", &Flag_duplicateMuonFilter);
-    tree_->SetBranchAddress("Flag_CSCTightHaloFilter", &Flag_CSCTightHaloFilter);
-    tree_->SetBranchAddress("Flag_hcalLaserEventFilter", &Flag_hcalLaserEventFilter);
-    tree_->SetBranchAddress("Flag_EcalDeadCellTriggerPrimitiveFilter", &Flag_EcalDeadCellTriggerPrimitiveFilter);
-    tree_->SetBranchAddress("Flag_goodVertices", &Flag_goodVertices);
-    tree_->SetBranchAddress("Flag_trackingFailureFilter", &Flag_trackingFailureFilter);
-    tree_->SetBranchAddress("Flag_eeBadScFilter", &Flag_eeBadScFilter);
-    tree_->SetBranchAddress("Flag_ecalLaserCorrFilter", &Flag_ecalLaserCorrFilter);
-    tree_->SetBranchAddress("Flag_trkPOGFilters", &Flag_trkPOGFilters);
-    tree_->SetBranchAddress("Flag_trkPOG_manystripclus53X", &Flag_trkPOG_manystripclus53X);
-    tree_->SetBranchAddress("Flag_trkPOG_toomanystripclus53X", &Flag_trkPOG_toomanystripclus53X);
-    tree_->SetBranchAddress("Flag_trkPOG_logErrorTooManyClusters", &Flag_trkPOG_logErrorTooManyClusters);
-    tree_->SetBranchAddress("Flag_METFilters", &Flag_METFilters);
-
+    if (use_full_tree)
+    {
+        tree_->SetBranchAddress("Flag_HBHENoiseFilter", &Flag_HBHENoiseFilter);
+        tree_->SetBranchAddress("Flag_HBHEIsoNoiseFilter", &Flag_HBHEIsoNoiseFilter);
+        tree_->SetBranchAddress("Flag_badChargedCandidateFilter", &Flag_badChargedCandidateFilter);
+        tree_->SetBranchAddress("Flag_badMuonFilter", &Flag_badMuonFilter);
+        tree_->SetBranchAddress("Flag_badGlobalMuonFilter", &Flag_badGlobalMuonFilter);
+        tree_->SetBranchAddress("Flag_duplicateMuonFilter", &Flag_duplicateMuonFilter);
+        tree_->SetBranchAddress("Flag_CSCTightHaloFilter", &Flag_CSCTightHaloFilter);
+        tree_->SetBranchAddress("Flag_hcalLaserEventFilter", &Flag_hcalLaserEventFilter);
+        tree_->SetBranchAddress("Flag_EcalDeadCellTriggerPrimitiveFilter", &Flag_EcalDeadCellTriggerPrimitiveFilter);
+        tree_->SetBranchAddress("Flag_goodVertices", &Flag_goodVertices);
+        tree_->SetBranchAddress("Flag_trackingFailureFilter", &Flag_trackingFailureFilter);
+        tree_->SetBranchAddress("Flag_eeBadScFilter", &Flag_eeBadScFilter);
+        tree_->SetBranchAddress("Flag_ecalLaserCorrFilter", &Flag_ecalLaserCorrFilter);
+        tree_->SetBranchAddress("Flag_trkPOGFilters", &Flag_trkPOGFilters);
+        tree_->SetBranchAddress("Flag_trkPOG_manystripclus53X", &Flag_trkPOG_manystripclus53X);
+        tree_->SetBranchAddress("Flag_trkPOG_toomanystripclus53X", &Flag_trkPOG_toomanystripclus53X);
+        tree_->SetBranchAddress("Flag_trkPOG_logErrorTooManyClusters", &Flag_trkPOG_logErrorTooManyClusters);
+        tree_->SetBranchAddress("Flag_METFilters", &Flag_METFilters);
+    }
     // book the branches that go into only One Lepton trees
     if (treeType == kTreeType_OneLepton_Reduced
 	|| treeType == kTreeType_ZeroLepton_Reduced
@@ -1018,10 +1047,10 @@ class ControlSampleEvents {
       tree_->SetBranchStatus("muonRecoEffWeight", 1);
       tree_->SetBranchStatus("MR", 1);
       tree_->SetBranchStatus("Rsq", 1);
-      tree_->SetBranchStatus("NJets40", 1);
-      tree_->SetBranchStatus("NJets80", 1);
-      tree_->SetBranchStatus("NBJetsLoose", 1);
-      tree_->SetBranchStatus("NBJetsMedium", 1);
+      tree_->SetBranchStatus("nSelectedJets", 1);
+      tree_->SetBranchStatus("nJets80", 1);
+      tree_->SetBranchStatus("nBJetsLoose", 1);
+      tree_->SetBranchStatus("nBJetsMedium", 1);
       tree_->SetBranchStatus("HLTDecision", 1);
       
       tree_->SetBranchAddress("genlep1Type",&genlep1Type);
@@ -1208,8 +1237,8 @@ class ControlSampleEvents {
       tree_->SetBranchAddress("METPhi_NoW",&METPhi_NoW);
       tree_->SetBranchAddress("HT_NoW",&HT_NoW);
       tree_->SetBranchAddress("dPhiRazor_NoW",&dPhiRazor_NoW);
-      tree_->SetBranchAddress("NJets_NoW",&NJets_NoW);
-      tree_->SetBranchAddress("NJets80_NoW",&NJets80_NoW);
+      tree_->SetBranchAddress("nJets_NoW",&nJets_NoW);
+      tree_->SetBranchAddress("nJets80_NoW",&nJets80_NoW);
       tree_->SetBranchAddress("nVetoMuons",&nVetoMuons);
       tree_->SetBranchAddress("nLooseMuons",&nLooseMuons);
       tree_->SetBranchAddress("nMediumMuons",&nMediumMuons);
@@ -1248,8 +1277,8 @@ class ControlSampleEvents {
       tree_->SetBranchAddress("recoZpt",       &recoZpt);
       tree_->SetBranchAddress("genZpt",        &genZpt);
       tree_->SetBranchAddress("genZphi",       &genZphi);
-      tree_->SetBranchAddress("NJets_NoZ",     &NJets_NoZ);
-      tree_->SetBranchAddress("NJets80_NoZ",   &NJets80_NoZ);
+      tree_->SetBranchAddress("nJets_NoZ",     &nJets_NoZ);
+      tree_->SetBranchAddress("nJets80_NoZ",   &nJets80_NoZ);
       tree_->SetBranchAddress("nVetoMuons",    &nVetoMuons);
       tree_->SetBranchAddress("nLooseMuons",   &nLooseMuons);
       tree_->SetBranchAddress("nMediumMuons",  &nMediumMuons);
@@ -1257,29 +1286,29 @@ class ControlSampleEvents {
       tree_->SetBranchAddress("HLT_Dimuon",    &HLT_Dimuon);
       tree_->SetBranchAddress("HLTDecision",&HLTDecision);
     }
-    
+
     // fill the photon tree
     if (treeType == kTreeType_Photon_Full) {
-      tree_->SetBranchAddress("HLTDecision",&HLTDecision);
-      tree_->SetBranchAddress("HLTPrescale",&HLTPrescale);
-      tree_->SetBranchAddress("pho1HLTFilter",&pho1HLTFilter);
-      tree_->SetBranchAddress("pho1", &pho1Ptr);
-      tree_->SetBranchAddress("pho2", &pho2Ptr);
-      tree_->SetBranchAddress("jet1" ,&jet1Ptr);
-      tree_->SetBranchAddress("jet2" ,&jet2Ptr);
-	  
-      tree_->SetBranchAddress("MR_NoPho",&MR_NoPho);
-      tree_->SetBranchAddress("Rsq_NoPho",&Rsq_NoPho);
-      tree_->SetBranchAddress("MET_NoPho",&MET_NoPho);
-      tree_->SetBranchAddress("METPhi_NoPho",&METPhi_NoPho);
-      tree_->SetBranchAddress("HT_NoPho",&HT_NoPho);
-      tree_->SetBranchAddress("dPhiRazor_NoPho",&dPhiRazor_NoPho);
-      tree_->SetBranchAddress("NJets_NoPho",&NJets_NoPho);
-      tree_->SetBranchAddress("NJets80_NoPho",&NJets80_NoPho);
+        tree_->SetBranchAddress("HLTDecision",&HLTDecision);
+        tree_->SetBranchAddress("HLTPrescale",&HLTPrescale);
+        tree_->SetBranchAddress("pho1HLTFilter",&pho1HLTFilter);
+        tree_->SetBranchAddress("pho1", &pho1Ptr);
+        tree_->SetBranchAddress("pho2", &pho2Ptr);
+        tree_->SetBranchAddress("jet1" ,&jet1Ptr);
+        tree_->SetBranchAddress("jet2" ,&jet2Ptr);
+
+        tree_->SetBranchAddress("MR_NoPho",&MR_NoPho);
+        tree_->SetBranchAddress("Rsq_NoPho",&Rsq_NoPho);
+        tree_->SetBranchAddress("MET_NoPho",&MET_NoPho);
+        tree_->SetBranchAddress("METPhi_NoPho",&METPhi_NoPho);
+        tree_->SetBranchAddress("HT_NoPho",&HT_NoPho);
+        tree_->SetBranchAddress("dPhiRazor_NoPho",&dPhiRazor_NoPho);
+      tree_->SetBranchAddress("nJets_NoPho",&nJets_NoPho);
+      tree_->SetBranchAddress("nJets80_NoPho",&nJets80_NoPho);
 
       tree_->SetBranchAddress("nSelectedPhotons",&nSelectedPhotons);
-      tree_->SetBranchAddress("NJets_NoPho",&NJets_NoPho);
-      tree_->SetBranchAddress("NJets80_NoPho",&NJets80_NoPho);
+      tree_->SetBranchAddress("nJets_NoPho",&nJets_NoPho);
+      tree_->SetBranchAddress("nJets80_NoPho",&nJets80_NoPho);
       tree_->SetBranchAddress("pho1_motherID",&pho1_motherID);
       tree_->SetBranchAddress("pho1_sigmaietaieta",&pho1_sigmaietaieta);
       tree_->SetBranchAddress("pho1_chargediso",&pho1_chargediso);
@@ -1326,10 +1355,10 @@ class ControlSampleEvents {
 
           //b-tag requirement
           if(option == "TwoLooseBTag"){
-              if(NBJetsLoose < 2) return false;
+              if(nBJetsLoose < 2) return false;
           }
           else{
-              if(NBJetsMedium < 1) return false;
+              if(nBJetsMedium < 1) return false;
           }
 
           //razor baseline cut
@@ -1361,10 +1390,10 @@ class ControlSampleEvents {
           
           //b-tag requirement
           if(option == "TwoLooseBTag"){
-              if(NBJetsLoose < 2) return false;
+              if(nBJetsLoose < 2) return false;
           }
           else{
-              if(NBJetsMedium < 1) return false;
+              if(nBJetsMedium < 1) return false;
           }
 
           //razor baseline cut
@@ -1390,7 +1419,7 @@ class ControlSampleEvents {
           if(lep1MT < 30 || lep1MT > 100) return false;
 
           //b-tag requirement
-          if(NBJetsMedium > 0) return false;
+          if(nBJetsMedium > 0) return false;
 
           //razor baseline cut
           if(MR < 300 || Rsq < 0.15) return false;
@@ -1416,7 +1445,7 @@ class ControlSampleEvents {
           if(mLL < 80 || mLL > 110) return false;
 
           //b-tag requirement
-          if(NBJetsMedium > 0) return false;
+          if(nBJetsMedium > 0) return false;
 
           //razor baseline cut
           if(MR < 300 || Rsq < 0.15) return false;
@@ -1441,7 +1470,7 @@ class ControlSampleEvents {
           if(mLL < 80 || mLL > 110) return false;
 
           //b-tag requirement
-          if(NBJetsMedium > 0) return false; 
+          if(nBJetsMedium > 0) return false; 
 
           //razor baseline cut
           if(MR_NoZ < 300 || Rsq_NoZ < 0.15) return false;
@@ -1466,7 +1495,7 @@ class ControlSampleEvents {
           if(lep1MT < 30 || lep1MT > 100) return false;
 
           //b-tag requirement
-          if(NBJetsMedium > 0) return false;
+          if(nBJetsMedium > 0) return false;
 
           //razor baseline cut
           if(MR_NoW < 300 || Rsq_NoW < 0.15) return false;

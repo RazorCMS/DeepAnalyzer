@@ -37,18 +37,18 @@ class RazorVarCollection
             MT2 = -99.;
             alphaT = -99.;
             dPhiMinJetMET = -99.;
-            RsqGenMet = -99.;
+            RsqGenMET = -99.;
             HT = -99.; MHT = -99.;
             leadingJetPt = -99.; subleadingJetPt = -99.; 
             leadingTightMuPt = -99.; leadingTightElePt = -99.;
             mT = -99.; mTLoose = -99.;
-            mTGenMet = -99.; mTLooseGenMet = -99.;
+            mTGenMET = -99.; mTLooseGenMET = -99.;
             nSelectedJets = 0; nBTaggedJets = 0; nJets80 = 0;
             nVetoMuons = 0; nTightMuons = 0; nVetoElectrons = 0; nTightElectrons = 0;
             box = RazorAnalyzer::NONE;
 
-            MetXCorr = 0; MetYCorr = 0;
-            metOverCaloMet = 0;
+            METXCorr = 0; METYCorr = 0;
+            METOverCaloMET = 0;
             leadingTightMu = TLorentzVector(); 
             leadingTightEle = TLorentzVector();
             GoodJets = vector<TLorentzVector>();
@@ -62,7 +62,7 @@ class RazorVarCollection
             if (tag == "") { conn = ""; } // remove underscore if not needed
             t->Branch(("MR"+conn+tag).c_str(), &MR, ("MR"+conn+tag+"/F").c_str());
             t->Branch(("Rsq"+conn+tag).c_str(), &Rsq, ("Rsq"+conn+tag+"/F").c_str());
-            t->Branch(("metOverCaloMet"+conn+tag).c_str(), &metOverCaloMet, ("metOverCaloMet"+conn+tag+"/F").c_str());
+            t->Branch(("METOverCaloMET"+conn+tag).c_str(), &METOverCaloMET, ("METOverCaloMET"+conn+tag+"/F").c_str());
             t->Branch(("dPhiRazor"+conn+tag).c_str(), &dPhiRazor, ("dPhiRazor"+conn+tag+"/F").c_str());
             t->Branch(("MT2"+conn+tag).c_str(), &MT2, ("MT2"+conn+tag+"/F").c_str());
             t->Branch(("HT"+conn+tag).c_str(), &HT, ("HT"+conn+tag+"/F").c_str());
@@ -87,9 +87,9 @@ class RazorVarCollection
                         ("leadingTightMuPt"+conn+tag+"/F").c_str());
                 t->Branch(("leadingTightElePt"+conn+tag).c_str(), &leadingTightElePt, 
                         ("leadingTightElePt"+conn+tag+"/F").c_str());
-                t->Branch(("RsqGenMet"+conn+tag).c_str(), &RsqGenMet, ("RsqGenMet"+conn+tag+"/F").c_str());
-                t->Branch(("mTGenMet"+conn+tag).c_str(), &mTGenMet, ("mTGenMet"+conn+tag+"/F").c_str());
-                t->Branch(("mTLooseGenMet"+conn+tag).c_str(), &mTLooseGenMet, ("mTLooseGenMet"+conn+tag+"/F").c_str());
+                t->Branch(("RsqGenMET"+conn+tag).c_str(), &RsqGenMET, ("RsqGenMET"+conn+tag+"/F").c_str());
+                t->Branch(("mTGenMET"+conn+tag).c_str(), &mTGenMET, ("mTGenMET"+conn+tag+"/F").c_str());
+                t->Branch(("mTLooseGenMET"+conn+tag).c_str(), &mTLooseGenMET, ("mTLooseGenMET"+conn+tag+"/F").c_str());
                 t->Branch(("nVetoMuons"+conn+tag).c_str(), &nVetoMuons, 
                         ("nVetoMuons"+conn+tag+"/I").c_str());
                 t->Branch(("nTightMuons"+conn+tag).c_str(), &nTightMuons, 
@@ -102,14 +102,14 @@ class RazorVarCollection
         }
 
         // List of variables
-        float MR,Rsq,RsqGenMet,dPhiRazor,leadingJetPt,subleadingJetPt,leadingTightMuPt,leadingTightElePt,mT,mTLoose,mTGenMet, mTLooseGenMet;
+        float MR,Rsq,RsqGenMET,dPhiRazor,leadingJetPt,subleadingJetPt,leadingTightMuPt,leadingTightElePt,mT,mTLoose,mTGenMET, mTLooseGenMET;
         float MT2, HT, MHT, alphaT, dPhiMinJetMET;
         int nSelectedJets,nBTaggedJets,nJets80;
         int nVetoMuons, nTightMuons, nVetoElectrons, nTightElectrons;
-        float metOverCaloMet;
+        float METOverCaloMET;
         RazorAnalyzer::RazorBox box;
         // Non-tree variables
-        float MetXCorr, MetYCorr;
+        float METXCorr, METYCorr;
         TLorentzVector leadingTightMu, leadingTightEle;
         vector<TLorentzVector> GoodJets, GoodLeptons, GoodPFObjects;
         string tag;
@@ -227,7 +227,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
 
     //For jet uncertainties
     int nLooseTaus;
-    float met;
+    float MET;
     float mjj_leadingJets, mjj_hemispheres;
     float leadingGenLeptonPt;
     float leadingGenLeptonEta;
@@ -235,7 +235,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
     float subLeadingGenLeptonEta;
     float subLeadingGenLeptonPt;
     int   subLeadingGenLeptonType;
-    int NGenBJets;
+    int nGenBJets;
     float genHT;
     int NISRJets;
 
@@ -247,7 +247,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
     float topTagScaleFactor, topTagScaleFactor_Tau32Up, topTagScaleFactor_Tau32Down;
     float topTagScaleFactor_FastsimEffUp, topTagScaleFactor_FastsimEffDown;
 
-    // SMS parameters 
+    // SMS paraMETers 
     int mGluino, mLSP;
     int nCharginoFromGluino, ntFromGluino;
     bool Flag_hasEcalGainSwitch;
@@ -260,7 +260,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
 
     razorTree->Branch("nVtx", &nVtx, "nVtx/I");
     razorTree->Branch("nLooseTaus", &nLooseTaus, "nLooseTaus/I");
-    razorTree->Branch("met", &met, "met/F");
+    razorTree->Branch("MET", &MET, "MET/F");
     razorTree->Branch("mjj_leadingJets", &mjj_leadingJets, "mjj_leadingJets/F");
     razorTree->Branch("mjj_hemispheres", &mjj_hemispheres, "mjj_hemispheres/F");
     razorTree->Branch("HLTDecision", &HLTDecision, "HLTDecision[300]/O");
@@ -314,7 +314,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             razorTree->Branch("subLeadingGenLeptonPt", &subLeadingGenLeptonPt, "subLeadingGenLeptonPt/F");
             razorTree->Branch("subLeadingGenLeptonEta", &subLeadingGenLeptonEta, "subLeadingGenLeptonEta/F");
             razorTree->Branch("subLeadingGenLeptonType", &subLeadingGenLeptonType, "subLeadingGenLeptonType/I");
-            razorTree->Branch("NGenBJets", &NGenBJets, "NGenBJets/I");
+            razorTree->Branch("nGenBJets", &nGenBJets, "nGenBJets/I");
             razorTree->Branch("sf_muonEffUp", &sf_muonEffUp, "sf_muonEffUp/F");
             razorTree->Branch("sf_muonEffDown", &sf_muonEffDown, "sf_muonEffDown/F");
             razorTree->Branch("sf_vetoMuonEffUp", &sf_vetoMuonEffUp, "sf_vetoMuonEffUp/F");
@@ -420,7 +420,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             subLeadingGenLeptonPt = -9;
             subLeadingGenLeptonEta = -9;
             subLeadingGenLeptonType = 0;
-            NGenBJets = 0;
+            nGenBJets = 0;
             genHT = 0;
             NISRJets = 0;
             ISRSystWeightUp = 1.0;
@@ -779,7 +779,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         float muonTrigCorrFactor = 1.0;
         float vetoMuonEffCorrFactor = 1.0;
         
-        //Cut parameters
+        //Cut paraMETers
         const float MUON_VETO_CUT = 5;
         const float MUON_TIGHT_CUT = 25;
         
@@ -826,16 +826,16 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                         mainVars["MESUp"]->nVetoMuons++;
                         mainVars["MESUp"]->GoodLeptons.push_back(thisMuonUp);
                         mainVars["MESUp"]->GoodPFObjects.push_back(thisMuonUp);
-                        mainVars["MESUp"]->MetXCorr += thisMuon.Px() - thisMuonUp.Px();
-                        mainVars["MESUp"]->MetYCorr += thisMuon.Py() - thisMuonUp.Py();
+                        mainVars["MESUp"]->METXCorr += thisMuon.Px() - thisMuonUp.Px();
+                        mainVars["MESUp"]->METYCorr += thisMuon.Py() - thisMuonUp.Py();
                     }
                     if (muonPtDown > MUON_VETO_CUT) 
                     {
                         mainVars["MESDown"]->nVetoMuons++;
                         mainVars["MESDown"]->GoodLeptons.push_back(thisMuonDown);
                         mainVars["MESDown"]->GoodPFObjects.push_back(thisMuonDown);
-                        mainVars["MESDown"]->MetXCorr += thisMuon.Px() - thisMuonDown.Px();
-                        mainVars["MESDown"]->MetYCorr += thisMuon.Py() - thisMuonDown.Py();
+                        mainVars["MESDown"]->METXCorr += thisMuon.Px() - thisMuonDown.Px();
+                        mainVars["MESDown"]->METYCorr += thisMuon.Py() - thisMuonDown.Py();
                     }
                 }
 
@@ -914,7 +914,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         float eleEffCorrFactor = 1.0;
         float vetoEleEffCorrFactor = 1.0;
         float eleTrigCorrFactor = 1.0;
-        //Cut parameters
+        //Cut paraMETers
         const float ELE_VETO_CUT = 5;
         const float ELE_TIGHT_CUT = 30;
         //Loop electrons
@@ -968,15 +968,15 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                         mainVars["EESUp"]->nVetoElectrons++;
                         mainVars["EESUp"]->GoodLeptons.push_back(thisElectronUp); 
                         mainVars["EESUp"]->GoodPFObjects.push_back(thisElectronUp); 
-                        mainVars["EESUp"]->MetXCorr += thisElectron.Px() - thisElectronUp.Px();
-                        mainVars["EESUp"]->MetYCorr += thisElectron.Py() - thisElectronUp.Py();
+                        mainVars["EESUp"]->METXCorr += thisElectron.Px() - thisElectronUp.Px();
+                        mainVars["EESUp"]->METYCorr += thisElectron.Py() - thisElectronUp.Py();
                     }
                     if (elePtDown > ELE_VETO_CUT) {
                         mainVars["EESDown"]->nVetoElectrons++;
                         mainVars["EESDown"]->GoodLeptons.push_back(thisElectronDown);
                         mainVars["EESDown"]->GoodPFObjects.push_back(thisElectronDown);
-                        mainVars["EESDown"]->MetXCorr += thisElectron.Px() - thisElectronDown.Px();
-                        mainVars["EESDown"]->MetYCorr += thisElectron.Py() - thisElectronDown.Py();
+                        mainVars["EESDown"]->METXCorr += thisElectron.Px() - thisElectronDown.Px();
+                        mainVars["EESDown"]->METYCorr += thisElectron.Py() - thisElectronDown.Py();
                     }
                 }
 
@@ -1238,8 +1238,8 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                             jetChargedEMEnergyFraction[i] + jetNeutralEMEnergyFraction[i] <= 0.9) 
                     {
                         // correct the MET
-                        vars.second->MetXCorr += -1 * (thisJet.Px() - L1CorrJet.Px());
-                        vars.second->MetYCorr += -1 * (thisJet.Py() - L1CorrJet.Py());
+                        vars.second->METXCorr += -1 * (thisJet.Px() - L1CorrJet.Px());
+                        vars.second->METYCorr += -1 * (thisJet.Py() - L1CorrJet.Py());
                     }
 
                     if (vars.first != "JESUp" && vars.first != "JESDown" && 
@@ -1272,7 +1272,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             if (matchesLepton) continue;
 
             // Count Number of Gen-Level Matched BJets
-            if (abs(jetPartonFlavor[i]) == 5 && jetCorrPt > 40 && fabs(jetEta[i]) < 2.4) NGenBJets++;
+            if (abs(jetPartonFlavor[i]) == 5 && jetCorrPt > 40 && fabs(jetEta[i]) < 2.4) nGenBJets++;
 
             // Apply b-tagging correction factor 
             if (!isData && abs(jetEta[i]) < 2.4 && jetCorrPt > BJET_CUT) 
@@ -1305,23 +1305,23 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                 //Propagate uncertainties to the MET
                 if (jetPtJESUp > 20) 
                 {
-                    mainVars["JESUp"]->MetXCorr += -1 * (thisJetJESUp.Px() - thisJet.Px());
-                    mainVars["JESUp"]->MetYCorr += -1 * (thisJetJESUp.Py() - thisJet.Py());
+                    mainVars["JESUp"]->METXCorr += -1 * (thisJetJESUp.Px() - thisJet.Px());
+                    mainVars["JESUp"]->METYCorr += -1 * (thisJetJESUp.Py() - thisJet.Py());
                 }
                 if (jetPtJESDown > 20) 
                 {
-                    mainVars["JESDown"]->MetXCorr += -1 * (thisJetJESDown.Px() - thisJet.Px());
-                    mainVars["JESDown"]->MetYCorr += -1 * (thisJetJESDown.Py() - thisJet.Py());
+                    mainVars["JESDown"]->METXCorr += -1 * (thisJetJESDown.Px() - thisJet.Px());
+                    mainVars["JESDown"]->METYCorr += -1 * (thisJetJESDown.Py() - thisJet.Py());
                 }
                 if (jetPtJERUp > 20) 
                 {
-                    mainVars["JERUp"]->MetXCorr += -1 * (thisJetJERUp.Px() - thisJet.Px());
-                    mainVars["JERUp"]->MetYCorr += -1 * (thisJetJERUp.Py() - thisJet.Py());
+                    mainVars["JERUp"]->METXCorr += -1 * (thisJetJERUp.Px() - thisJet.Px());
+                    mainVars["JERUp"]->METYCorr += -1 * (thisJetJERUp.Py() - thisJet.Py());
                 }
                 if (jetPtJERDown > 20) 
                 {
-                    mainVars["JERDown"]->MetXCorr += -1 * (thisJetJERDown.Px() - thisJet.Px());
-                    mainVars["JERDown"]->MetYCorr += -1 * (thisJetJERDown.Py() - thisJet.Py());
+                    mainVars["JERDown"]->METXCorr += -1 * (thisJetJERDown.Px() - thisJet.Px());
+                    mainVars["JERDown"]->METYCorr += -1 * (thisJetJERDown.Py() - thisJet.Py());
                 }
                 
                 //Record jets that pass the cut
@@ -1410,8 +1410,8 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         /////////////////////////////////
 
 
-        double Type1MetXCorr = mainVars[""]->MetXCorr;
-        double Type1MetYCorr = mainVars[""]->MetYCorr;
+        double Type1METXCorr = mainVars[""]->METXCorr;
+        double Type1METYCorr = mainVars[""]->METYCorr;
         
         
 
@@ -1433,13 +1433,13 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             vars.second->HT = myHT;
             
             // Make MET	  	  
-            double PFMetX = 0;
-            double PFMetY = 0;
+            double PFMETX = 0;
+            double PFMETY = 0;
 
             //previous version did not have Jet-energy corrected MET saved in big ntuples.
             //therefore use corrections
-            PFMetX = metPt*cos(metPhi) + vars.second->MetXCorr;
-            PFMetY = metPt*sin(metPhi) + vars.second->MetYCorr;
+            PFMETX = metPt*cos(metPhi) + vars.second->METXCorr;
+            PFMETY = metPt*sin(metPhi) + vars.second->METYCorr;
 
             //Starting from V3p13 run on Feb03 2017 reMiniAOD, metMuEGCleanCorr does have jet energy corrected MET
             //So for systematics need to subtract nominal type1 correction and add shifted type 1 corrections
@@ -1447,21 +1447,21 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             {
                 if (vars.first == "") 
                 {
-                    PFMetX = metMuEGCleanCorrPt*cos(metMuEGCleanCorrPhi);
-                    PFMetY = metMuEGCleanCorrPt*sin(metMuEGCleanCorrPhi);
+                    PFMETX = metMuEGCleanCorrPt*cos(metMuEGCleanCorrPhi);
+                    PFMETY = metMuEGCleanCorrPt*sin(metMuEGCleanCorrPhi);
                 } else 
                 {
-                    PFMetX = metMuEGCleanCorrPt*cos(metMuEGCleanCorrPhi) + (vars.second->MetXCorr - Type1MetXCorr);
-                    PFMetY = metMuEGCleanCorrPt*sin(metMuEGCleanCorrPhi) + (vars.second->MetYCorr - Type1MetYCorr);
+                    PFMETX = metMuEGCleanCorrPt*cos(metMuEGCleanCorrPhi) + (vars.second->METXCorr - Type1METXCorr);
+                    PFMETY = metMuEGCleanCorrPt*sin(metMuEGCleanCorrPhi) + (vars.second->METYCorr - Type1METYCorr);
                 }
             } 
 
             TLorentzVector MyMET;
-            MyMET.SetPxPyPzE(PFMetX, PFMetY, 0, sqrt(PFMetX*PFMetX + PFMetY*PFMetY));
+            MyMET.SetPxPyPzE(PFMETX, PFMETY, 0, sqrt(PFMETX*PFMETX + PFMETY*PFMETY));
             TLorentzVector GenMET;
-            double GenMetX = genMetPt*cos(genMetPhi);
-            double GenMetY = genMetPt*sin(genMetPhi);
-            GenMET.SetPxPyPzE(GenMetX, GenMetY, 0, sqrt(GenMetX*GenMetX + GenMetY*GenMetY));	      
+            double GenMETX = genMetPt*cos(genMetPhi);
+            double GenMETY = genMetPt*sin(genMetPhi);
+            GenMET.SetPxPyPzE(GenMETX, GenMETY, 0, sqrt(GenMETX*GenMETX + GenMETY*GenMETY));	      
 
             // Compute MR, Rsq, dPhiRazor
             if (vars.second->GoodPFObjects.size() >= 2 
@@ -1474,13 +1474,13 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
 
                 if (vars.first == "") 
                 {
-                    vars.second->RsqGenMet = computeRsq(hemispheres[0], hemispheres[1], GenMET);
+                    vars.second->RsqGenMET = computeRsq(hemispheres[0], hemispheres[1], GenMET);
                     mjj_hemispheres = (hemispheres[0] + hemispheres[1]).M();
                 }
                 vars.second->dPhiRazor = deltaPhi(hemispheres[0].Phi(),hemispheres[1].Phi());
             }           
-            vars.second->metOverCaloMet = MyMET.Pt()/metCaloPt;
-            if (vars.first == "") met = MyMET.Pt();
+            vars.second->METOverCaloMET = MyMET.Pt()/metCaloPt;
+            if (vars.first == "") MET = MyMET.Pt();
 
             // Compute MT2
             if (vars.second->GoodJets.size() >= 2) vars.second->MT2 = calcMT2(0., false, vars.second->GoodJets, MyMET, 2, 3);
@@ -1512,12 +1512,12 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                 {
                     leadingLepton = vars.second->leadingTightEle;
                 }
-                float deltaPhiLepMet = leadingLepton.DeltaPhi(MyMET);
-                vars.second->mT = sqrt(2*leadingLepton.Pt()*MyMET.Pt()*(1.0 - cos(deltaPhiLepMet))); 
+                float deltaPhiLepMET = leadingLepton.DeltaPhi(MyMET);
+                vars.second->mT = sqrt(2*leadingLepton.Pt()*MyMET.Pt()*(1.0 - cos(deltaPhiLepMET))); 
                 if (vars.first == "") 
                 {
-                    float deltaPhiLepGenMet = leadingLepton.DeltaPhi(GenMET);
-                    vars.second->mTGenMet = sqrt(2*leadingLepton.Pt()*GenMET.Pt()*(1.0 - cos(deltaPhiLepGenMet)));
+                    float deltaPhiLepGenMET = leadingLepton.DeltaPhi(GenMET);
+                    vars.second->mTGenMET = sqrt(2*leadingLepton.Pt()*GenMET.Pt()*(1.0 - cos(deltaPhiLepGenMET)));
                 }
             }
 
@@ -1537,14 +1537,14 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
 
                 if (maxLepIndex >= 0)
                 {
-                    float deltaPhiLepMet = vars.second->GoodLeptons[maxLepIndex].DeltaPhi(MyMET);
+                    float deltaPhiLepMET = vars.second->GoodLeptons[maxLepIndex].DeltaPhi(MyMET);
                     vars.second->mTLoose = sqrt(2*vars.second->GoodLeptons[maxLepIndex].Pt()*MyMET.Pt()*(1.0 
-                                - cos(deltaPhiLepMet)));
+                                - cos(deltaPhiLepMET)));
                     if (vars.first == "") 
                     {
-                        float deltaPhiLepGenMet = vars.second->GoodLeptons[maxLepIndex].DeltaPhi(GenMET);
-                        vars.second->mTLooseGenMet = sqrt(2*vars.second->GoodLeptons[maxLepIndex].Pt()*GenMET.Pt()*(1.0 
-                                    - cos(deltaPhiLepGenMet)));
+                        float deltaPhiLepGenMET = vars.second->GoodLeptons[maxLepIndex].DeltaPhi(GenMET);
+                        vars.second->mTLooseGenMET = sqrt(2*vars.second->GoodLeptons[maxLepIndex].Pt()*GenMET.Pt()*(1.0 
+                                    - cos(deltaPhiLepGenMET)));
                     }
                 }
 
@@ -1838,25 +1838,12 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             if (!Flag_HBHEIsoNoiseFilter) continue;
             if (!Flag_goodVertices) continue;
             if (!Flag_eeBadScFilter) continue;
-//            if (!Flag_HBHENoiseFilter) continue;
-//            if (!Flag_HBHEIsoNoiseFilter) continue;
-//            if (!Flag_badChargedCandidateFilter) continue;
-//            if (!Flag_badMuonFilter) continue;
-//            if (!Flag_badGlobalMuonFilter) continue;
-//            if (!Flag_duplicateMuonFilter) continue;
-//            if (!Flag_CSCTightHaloFilter) continue;
-//            if (!Flag_hcalLaserEventFilter) continue;
-//            if (!Flag_EcalDeadCellTriggerPrimitiveFilter) continue;
-//            if (!Flag_goodVertices) continue;
-//            if (!Flag_trackingFailureFilter) continue;
-//            if (!Flag_eeBadScFilter) continue;
-//            if (!Flag_ecalLaserCorrFilter) continue;
-//            if (!Flag_trkPOGFilters) continue;
-//            if (!Flag_trkPOG_manystripclus53X) continue;
-//            if (!Flag_trkPOG_toomanystripclus53X) continue;
-//            if (!Flag_trkPOG_logErrorTooManyClusters) continue;
-//            if (!Flag_METFilters) continue;
-//            if (!Flag_hasEcalGainSwitch) continue;
+            if (!Flag_badChargedCandidateFilter) continue;
+            if (!Flag_badMuonFilter) continue;
+            if (Flag_badGlobalMuonFilter) continue; 
+            if (Flag_duplicateMuonFilter) continue;
+            if (!Flag_CSCTightHaloFilter) continue;
+            if (!Flag_EcalDeadCellTriggerPrimitiveFilter) continue;
         }
 
         //Emulate the 2017 trigger

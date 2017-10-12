@@ -18,7 +18,7 @@ import getpass
 
 sys.path.append(os.path.dirname(__file__)+'/..')
 from haddFastsimSMS import makeFileLists, haddFastsimFiles
-from ControlRegionNtuples2016_V3p15 import SAMPLES, TREETYPES, TREETYPEEXT, SKIMS, DIRS, OPTIONS, VERSION, DATA, SUFFIXES, ANALYZERS, EXTRASKIMS
+from NtupleDictionary2016_V3p15 import SAMPLES, TREETYPES, TREETYPEEXT, SKIMS, DIRS, OPTIONS, VERSION, DATA, SUFFIXES, ANALYZERS, EXTRASKIMS
 
 RAZOR_EOS_DIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/Analyzers/'+getpass.getuser()
 
@@ -41,7 +41,7 @@ def submitJobs(analyzer,tag,isData=False,submit=False,reHLT=False,label='',
         queue='1nh', filesperjob=6, fastsim=False, 
         jobsLimit=-1, verbose=False):
     # parameters
-    local_dir = os.environ['CMSSW_BASE']+'/src/NeuralNetAnalyzer/'
+    local_dir = os.environ['CMSSW_BASE']+'/src/DeepAnalyzer/'
     samples = SAMPLES
     listdir = local_dir+'lists/Run2/razorNtupler'+(VERSION.split('_')[0])+'/MC_Summer16'
     eos_list_dir = '{}/lists/{}/'.format(RAZOR_EOS_DIR, VERSION)
@@ -263,7 +263,7 @@ def skimNtuples(analyzer,tag,isData=False,label=''):
                 else:
                     print "Input file for",sample,"not found!"
                     print "( looking for",fname,")"
-    skimString = ''
+    skimString = 'leadingJetPt > 100'
     #skimString = 'MR%s > 300 && Rsq%s > 0.15'%(SUFFIXES[tag],SUFFIXES[tag])
     print "Skimming with",skimString
     call(['./SkimNtuple','skim_'+tag+'.txt',DIRS[tag],'RazorSkim',skimString])

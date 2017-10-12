@@ -13,6 +13,7 @@
 #include <TH1F.h>
 #include <TH1D.h>
 #include <TH2D.h>
+#pragma GCC diagnostic ignored "-Wunused-variable"
 
 using namespace std;
 
@@ -1197,7 +1198,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         int nBJetsLoose40GeV = 0;
         int nBJetsMedium40GeV = 0;
         int nBJetsTight40GeV = 0;
-        events->NGenBJets = 0;
+        events->nGenBJets = 0;
         events->bjet1.SetPtEtaPhiM(0,0,0,0);
         events->bjet2.SetPtEtaPhiM(0,0,0,0);
         events->bjet1PassLoose = false;
@@ -1206,8 +1207,8 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         events->bjet2PassLoose = false;
         events->bjet2PassMedium = false;
         events->bjet2PassTight = false;       
-        events->minDPhi = 9999;
-        events->minDPhiN = 9999;
+        events->dPhiMinJetMET = 9999;
+        events->dPhiMinJetMETN = 9999;
 
         float mhx = 0., mhy = 0., mhx_nohf = 0., mhy_nohf = 0.;
 
@@ -1300,7 +1301,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
             if (abs(jetPartonFlavor[i]) == 5) 
             {
                 //count number of bjets in acceptance
-                if (thisJet.Pt() > BJET_PT_CUT && fabs(thisJet.Eta()) < 2.4) events->NGenBJets++;
+                if (thisJet.Pt() > BJET_PT_CUT && fabs(thisJet.Eta()) < 2.4) events->nGenBJets++;
 
                 if (!bjet1Found) 
                 {
@@ -1419,12 +1420,14 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         for (int i=0;i<int(GoodJets.size());i++) {
             if (i==0) {
                 events->jet1.SetPtEtaPhiM(GoodJets[i].Pt(), GoodJets[i].Eta(),GoodJets[i].Phi(),GoodJets[i].M());
+                events->leadingJetPt = GoodJets[i].Pt();
                 if(isCSVL(i)) events->jet1PassCSVLoose = true;	      
                 if(isCSVM(i)) events->jet1PassCSVMedium = true;
                 if(isCSVT(i)) events->jet1PassCSVTight = true;	
             }
             if (i==1) {
                 events->jet2.SetPtEtaPhiM(GoodJets[i].Pt(), GoodJets[i].Eta(),GoodJets[i].Phi(),GoodJets[i].M());
+                events->subleadingJetPt = GoodJets[i].Pt();
                 if(isCSVL(i)) events->jet2PassCSVLoose = true;	      
                 if(isCSVM(i)) events->jet2PassCSVMedium = true;
                 if(isCSVT(i)) events->jet2PassCSVTight = true; 	   	
@@ -1432,22 +1435,22 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         }
 
         //***************************************************************
-        //compute minDPhi variables
+        //compute dPhiMinJetMET variables
         //***************************************************************
 
         double JER = 0.1; //average jet energy resolution
 
         for (int i=0;i<int(GoodJets.size());i++) 
         {
-            if (i>3) continue; //only consider first 4 jets for minDPhi 	  
+            if (i>3) continue; //only consider first 4 jets for dPhiMinJetMET 	  
             double dPhi = fmin(fabs(deltaPhi(metPhi,GoodJets[i].Phi())) , fabs(3.1415926 - fabs(deltaPhi(metPhi,GoodJets[i].Phi()))));
-            if (dPhi < events->minDPhi) events->minDPhi = dPhi;
+            if (dPhi < events->dPhiMinJetMET) events->dPhiMinJetMET = dPhi;
             double deltaT = 0;
             for(auto& jet2 : GoodJets) {
                 deltaT += pow(JER*jet2.Pt()*sin(fabs(deltaPhi(GoodJets[i].Phi(),jet2.Phi()))),2);
             }      
             double dPhiN = dPhi / atan2(sqrt(deltaT) , metPt);
-            if (dPhiN < events->minDPhiN) events->minDPhiN = dPhiN;
+            if (dPhiN < events->dPhiMinJetMETN) events->dPhiMinJetMETN = dPhiN;
         }
 
 
@@ -1497,7 +1500,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         //only compute razor variables if we have 2 jets
         //Use Type 1 PFMet for MET
         if (GoodPFObjects.size() >= 2 
-                && GoodJets.size() < 20 //this is a protection again crazy events
+                && GoodJets.size() < 20 //this is a protection against crazy events
            ) 
         {
             vector<TLorentzVector> hemispheres = getHemispheres(GoodPFObjects);
@@ -1507,12 +1510,18 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
             events->dPhiRazor = fabs(hemispheres[0].DeltaPhi(hemispheres[1]));
         }
 
+        // Compute MT2 and alphaT
+        if (GoodJets.size() >= 2)
+        {
+            events->MT2 = calcMT2(0., false, GoodJets, MyMET, 2, 3);
+            events->alphaT = GetAlphaT(GoodJets);
+        } 
 
         if (printSyncDebug)  
         {
             cout << "MR = " << events->MR << " Rsq = " << events->Rsq << " | "
                 << " Mll = " << (events->lep1 + events->lep2).M() << " | " 
-                << " NJets80 = " << numJetsAbove80GeV << " NJets40 = " << numJetsAbove40GeV << " GoodPFObjects.size() = " << GoodPFObjects.size() << " "
+                << " nJets80 = " << numJetsAbove80GeV << " nSelectedJets = " << numJetsAbove40GeV << " GoodPFObjects.size() = " << GoodPFObjects.size() << " "
                 << " MET = " << MyMET.Pt() << " MetPhi = " << MyMET.Phi() << " nBTagsMedium = " << nBJetsMedium40GeV << "\n";
         }
 
@@ -1522,11 +1531,11 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         events->METnoHFPhi = PFMETnoHFType1.Phi();
         events->METRaw = PFMETUnCorr.Pt();
         events->METRawPhi = PFMETUnCorr.Phi();
-        events->NJets40 = numJetsAbove40GeV;
-        events->NJets80 = numJetsAbove80GeV;
-        events->NBJetsLoose = nBJetsLoose40GeV;
-        events->NBJetsMedium = nBJetsMedium40GeV;
-        events->NBJetsTight = nBJetsTight40GeV;
+        events->nSelectedJets = numJetsAbove40GeV;
+        events->nJets80 = numJetsAbove80GeV;
+        events->nBJetsLoose = nBJetsLoose40GeV;
+        events->nBJetsMedium = nBJetsMedium40GeV;
+        events->nBJetsTight = nBJetsTight40GeV;
 
         ///
         events-> metType1PtJetResUp          = metType1PtJetResUp;	      
@@ -1697,10 +1706,10 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
             {
                 if(jet.Pt() > 80) numJets80_noPho++;
             }
-            events->NJets80_NoPho = numJets80_noPho;
+            events->nJets80_NoPho = numJets80_noPho;
 
             //count jets and compute HT
-            events->NJets_NoPho = GoodJetsNoLeadPhoton.size();
+            events->nJets_NoPho = GoodJetsNoLeadPhoton.size();
             float ht_noPho = 0.;
             for (auto& pf : GoodJetsNoLeadPhoton) ht_noPho += pf.Pt();
             events->HT_NoPho = ht_noPho;
@@ -1787,13 +1796,13 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         {
             events->MET_NoW = LepPlusMet_perp.Pt();
             events->METPhi_NoW = LepPlusMet_perp.Phi();
-            events->NJets_NoW = GoodJetsNoLeptons.size();
+            events->nJets_NoW = GoodJetsNoLeptons.size();
             events->HT_NoW = ht_NoLep;
-            events->NJets80_NoW = njets80NoLep;
+            events->nJets80_NoW = njets80NoLep;
             events->METPhi = MyMET.Phi();
 
             //compute razor variables 
-            if(events->NJets_NoW > 1 && GoodJets.size()<20)
+            if(events->nJets_NoW > 1 && GoodJets.size()<20)
             {
                 vector<TLorentzVector> hemispheresNoW = getHemispheres(GoodJetsNoLeptons);
                 events->Rsq_NoW = computeRsq(hemispheresNoW[0], hemispheresNoW[1], LepPlusMet_perp);
@@ -1817,9 +1826,9 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         {
             events->MET_NoZ = LepPlusMet_perp.Pt();
             events->METPhi_NoZ = LepPlusMet_perp.Phi();
-            events->NJets_NoZ = GoodJetsNoLeptons.size();
+            events->nJets_NoZ = GoodJetsNoLeptons.size();
             events->HT_NoZ = ht_NoLep;
-            events->NJets80_NoZ = njets80NoLep;
+            events->nJets80_NoZ = njets80NoLep;
             events->METPhi = MyMET.Phi();
 
             // Compute the recoil for Z
@@ -1841,7 +1850,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
             }
 
             //compute razor variables 
-            if(events->NJets_NoZ > 1 && GoodJets.size()<20)
+            if(events->nJets_NoZ > 1 && GoodJets.size()<20)
             {
                 vector<TLorentzVector> hemispheresNoZ = getHemispheres(GoodJetsNoLeptons);
                 events->Rsq_NoZ = computeRsq(hemispheresNoZ[0], hemispheresNoZ[1], LepPlusMet_perp);
@@ -1876,6 +1885,17 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         //****************************************************************************
         //Event Skimming
         //****************************************************************************
+        if (!Flag_HBHENoiseFilter) continue;
+        if (!Flag_HBHEIsoNoiseFilter) continue;
+        if (!Flag_goodVertices) continue;
+        if (!Flag_eeBadScFilter) continue;
+        if (!Flag_badChargedCandidateFilter) continue;
+        if (!Flag_badMuonFilter) continue;
+        if (Flag_badGlobalMuonFilter) continue; 
+        if (Flag_duplicateMuonFilter) continue;
+        if (!Flag_CSCTightHaloFilter) continue;
+        if (!Flag_EcalDeadCellTriggerPrimitiveFilter) continue;
+        
         bool passSkim = true;
 
         // Dilepton skim
@@ -1920,7 +1940,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         if (razorSkimOption == 1) 
         {
             if ( !( 
-                        events->MR > 300 && events->Rsq > 0.1
+                        events->leadingJetPt > 100
                   )
                ) passSkim = false;
         }
@@ -1929,7 +1949,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         if(razorSkimOption == 2)
         {
             if (!(
-                        events->MR_NoW > 300 && events->Rsq_NoW > 0.15
+                        events->leadingJetPt > 100
                  )
                ) passSkim = false;		
         }
@@ -1939,7 +1959,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         if(razorSkimOption == 3) 
         {
             if (!(
-                        events->MR_NoZ > 300 && events->Rsq_NoZ > 0.15
+                        events->leadingJetPt > 100
                  )
                ) passSkim = false;
         }
@@ -1948,8 +1968,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         if(razorSkimOption == 5)
         {
             if (!(
-                        events->MR_NoPho > 300
-                        && events->Rsq_NoPho > 0.15
+                        events->leadingJetPt > 100
                  )
                ) passSkim = false;	
         }

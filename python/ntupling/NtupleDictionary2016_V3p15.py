@@ -12,13 +12,13 @@ TREETYPES = { '1L':'OneLeptonFull',
               'Signal':'',
               'SignalFastsim':'',
               }
-ANALYZERS = { '1L':'RazorControlRegions',
-              '1LInv':'RazorControlRegions',
-              '2L':'RazorControlRegions',
-              '2LInv':'RazorControlRegions',
-              'VetoL':'RazorControlRegions',
-              'VetoTau':'RazorControlRegions',
-              'Photon':'RazorControlRegions',
+ANALYZERS = { '1L':'InclusiveControlRegion',
+              '1LInv':'InclusiveControlRegion',
+              '2L':'InclusiveControlRegion',
+              '2LInv':'InclusiveControlRegion',
+              'VetoL':'InclusiveControlRegion',
+              'VetoTau':'InclusiveControlRegion',
+              'Photon':'InclusiveControlRegion',
               'Signal':'InclusiveSignalRegion',
               'SignalFastsim':'InclusiveSignalRegion',
               }
@@ -40,7 +40,7 @@ SKIMS = { '1L':'SingleLeptonSkim',
           'SignalFastsim':'',
           }
 
-DIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/RunTwoRazorControlRegions/2016/'+VERSION
+DIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/RunTwoInclusiveControlRegion/2016/'+VERSION
 DIRS = { tag:DIR+'/'+TREETYPES[tag] for tag in TREETYPES }
 DIRS['Signal'] = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/'+VERSION+'/Signal'
 DIRS['SignalFastsim'] = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/'+VERSION+'/SignalFastsim'

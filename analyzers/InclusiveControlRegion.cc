@@ -1192,7 +1192,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         bool bjet2Found = false;
         vector<TLorentzVector> GoodJets;
         int numJetsAbove80GeV = 0;
-        int numJetsAbove40GeV = 0;
+        int nSelectedJets = 0;
         double MetX_Type1Corr = 0;
         double MetY_Type1Corr = 0;
         int nBJetsLoose40GeV = 0;
@@ -1365,23 +1365,17 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
             if (jetPt[i]*JEC > BJET_PT_CUT && isCSVT(i)) nBJetsTight40GeV++;
 
             if (jetPt[i]*JEC*jetEnergySmearFactor < JET_PT_CUT) continue;
+            if (fabs(jetEta[i]) > JET_ETA_CUT) continue;
 
             // calculate MHT
-            if (jetPt[i]*JEC*jetEnergySmearFactor > 20)
+            if (jetPt[i]*JEC*jetEnergySmearFactor > JET_PT_CUT && fabs(jetEta[i] < JET_ETA_CUT))
             {
                 mhx -= jetPt[i]*JEC*jetEnergySmearFactor*cos(jetPhi[i]);
                 mhy -= jetPt[i]*JEC*jetEnergySmearFactor*sin(jetPhi[i]);
-
-                if (fabs(jetEta[i]) < 3.0)
-                {
-                    mhx_nohf -= jetPt[i]*JEC*jetEnergySmearFactor*cos(jetPhi[i]);
-                    mhy_nohf -= jetPt[i]*JEC*jetEnergySmearFactor*sin(jetPhi[i]);
-                }
             }
 
-            if (fabs(jetEta[i]) > JET_ETA_CUT) continue;
 
-            numJetsAbove40GeV++;
+            nSelectedJets++;
             if(jetPt[i]*JEC*jetEnergySmearFactor > 80) numJetsAbove80GeV++;	  
             GoodJets.push_back(thisJet);	  
 
@@ -1403,7 +1397,6 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         events->topTagScaleFactor = jetInfo.topTagScaleFactor;
 
         events->MHT = sqrt(mhx*mhx + mhy*mhy);
-        events->MHTnoHF = sqrt(mhx_nohf*mhx_nohf + mhy_nohf*mhy_nohf);
 
         //sort good jets
         sort(GoodJets.begin(), GoodJets.end(), greater_than_pt());
@@ -1521,7 +1514,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         {
             cout << "MR = " << events->MR << " Rsq = " << events->Rsq << " | "
                 << " Mll = " << (events->lep1 + events->lep2).M() << " | " 
-                << " nJets80 = " << numJetsAbove80GeV << " nSelectedJets = " << numJetsAbove40GeV << " GoodPFObjects.size() = " << GoodPFObjects.size() << " "
+                << " nJets80 = " << numJetsAbove80GeV << " nSelectedJets = " << nSelectedJets << " GoodPFObjects.size() = " << GoodPFObjects.size() << " "
                 << " MET = " << MyMET.Pt() << " MetPhi = " << MyMET.Phi() << " nBTagsMedium = " << nBJetsMedium40GeV << "\n";
         }
 
@@ -1531,7 +1524,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         events->METnoHFPhi = PFMETnoHFType1.Phi();
         events->METRaw = PFMETUnCorr.Pt();
         events->METRawPhi = PFMETUnCorr.Phi();
-        events->nSelectedJets = numJetsAbove40GeV;
+        events->nSelectedJets = nSelectedJets;
         events->nJets80 = numJetsAbove80GeV;
         events->nBJetsLoose = nBJetsLoose40GeV;
         events->nBJetsMedium = nBJetsMedium40GeV;

@@ -230,6 +230,7 @@ class RazorAnalyzer: public RazorEvents
             EleMultiJet = 19,
             LooseLeptonMultiJet = 20,
             MultiJet = 21,
+            Monojet = 22,
             NONE = 999
         };
 };

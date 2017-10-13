@@ -40,6 +40,7 @@ class RazorVarCollection
             RsqGenMET = -99.;
             HT = -99.; MHT = -99.;
             leadingJetPt = -99.; subleadingJetPt = -99.; 
+            leadingJetEta = -99.;
             leadingJetCISV = -99.;
             leadingTightMuPt = -99.; leadingTightElePt = -99.;
             mT = -99.; mTLoose = -99.;
@@ -74,6 +75,8 @@ class RazorVarCollection
                     ("leadingJetPt"+conn+tag+"/F").c_str());
             t->Branch(("subleadingJetPt"+conn+tag).c_str(), &subleadingJetPt, 
                     ("subleadingJetPt"+conn+tag+"/F").c_str());
+            t->Branch(("leadingJetEta"+conn+tag).c_str(), &leadingJetEta, 
+                    ("leadingJetEta"+conn+tag+"/F").c_str());
             t->Branch(("leadingJetCISV"+conn+tag).c_str(), &leadingJetCISV, 
                     ("leadingJetCISV"+conn+tag+"/F").c_str());
             t->Branch(("mT"+conn+tag).c_str(), &mT, ("mT"+conn+tag+"/F").c_str());
@@ -105,7 +108,7 @@ class RazorVarCollection
         }
 
         // List of variables
-        float MR,Rsq,RsqGenMET,dPhiRazor,leadingJetPt,subleadingJetPt,leadingTightMuPt,leadingTightElePt,mT,mTLoose,mTGenMET, mTLooseGenMET, leadingJetCISV;
+        float MR,Rsq,RsqGenMET,dPhiRazor,leadingJetPt,subleadingJetPt,leadingTightMuPt,leadingTightElePt,mT,mTLoose,mTGenMET, mTLooseGenMET, leadingJetCISV, leadingJetEta;
         float MT2, HT, MHT, alphaT, dPhiMinJetMET;
         int nSelectedJets,nBTaggedJets,nJets80;
         int nVetoMuons, nTightMuons, nVetoElectrons, nTightElectrons;
@@ -1382,6 +1385,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                     vars.second->subleadingJetPt = vars.second->leadingJetPt;
                     subleadingJet = leadingJet;
                     vars.second->leadingJetPt = jet.Pt();
+                    vars.second->leadingJetEta = jet.Eta();
                     leadingJet = jet;
                 }
                 else if (jet.Pt() > vars.second->subleadingJetPt)
@@ -1622,9 +1626,9 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                     + vars.second->nVetoElectrons + vars.second->nVetoMuons 
                     + vars.second->nTightElectrons + vars.second->nTightMuons == 0)
             {
-                if (vars.second->nSelectedJets > 5) vars.second->box = SixJet;
-                else if (vars.second->nSelectedJets > 3) vars.second->box = FourJet;
-                else vars.second->box = DiJet;
+                if (vars.second->nSelectedJets > 3 && vars.second->leadingJetPt > 100 && vars.second->subleadingJetPt > 60) vars.second->box = MultiJet;
+                else if (vars.second->nSelectedJets > 1 && vars.second->leadingJetPt > 100 && vars.second->subleadingJetPt > 60) vars.second->box = DiJet;
+                else if (vars.second->nSelectedJets >=1 && vars.second->leadingJetPt > 100 && abs(vars.second->leadingJetEta) < 2.5) vars.second->box = MonoJet;
             }
         }
 

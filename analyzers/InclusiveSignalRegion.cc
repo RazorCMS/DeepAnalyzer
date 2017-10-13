@@ -1625,13 +1625,12 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                 else if (vars.second->nSelectedJets > 3) vars.second->box = LooseLeptonFourJet;
                 else vars.second->box = LooseLeptonDiJet;
             }
-            else if (vars.second->nJets80 >= 1 && nLooseTaus
+            else if (vars.second->leadingJetPt > 100. && abs(vars.second->leadingJetEta) < 2.5 && nLooseTaus
                     + vars.second->nVetoElectrons + vars.second->nVetoMuons 
                     + vars.second->nTightElectrons + vars.second->nTightMuons == 0)
             {
-                if (vars.second->nSelectedJets > 0 && vars.second->leadingJetPt > 100 && abs(vars.second->leadingJetEta) < 2.5 && vars.second->subleadingJetPt < 60) vars.second->box = MonoJet;
-                else if (vars.second->nSelectedJets > 3 && vars.second->subleadingJetPt > 60) vars.second->box = MultiJet;
-                else if (vars.second->nSelectedJets > 1 && vars.second->subleadingJetPt > 60) vars.second->box = DiJet;
+                if (vars.second->subleadingJetPt > 60) vars.second->box = MultiJet;
+                else vars.second->box = MonoJet;
             }
         }
 

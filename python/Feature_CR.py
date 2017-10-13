@@ -25,20 +25,19 @@ COLORS = {
         }
 
 def draw_plot(hist, tree, feature, sample):
-    cr = rt.TFile("ControlRegionPlots.root","update")
-    lumi = '35.9'
-    if sample is "Data": lumi = '1.'
+    #cr = rt.TFile("ControlRegionPlots.root","update")
+    lumi = "35.9"
+    if sample is "Data": lumi = "1."
     cv = rt.TCanvas("cv","",700,600)
-    #tree.Draw(feature+">>"+hist.GetName(),"weight")
-    tree.Draw(feature+">>"+hist.GetName(),"weight*"+lumi+"*(lep1MT<100)")
-    hist.SetLineWidth(1)
+    tree.Draw(feature+">>"+hist.GetName(),"weight*"+lumi+"*leadingJetPt>100")
+    hist.SetLineWidth(3)
     #if sample is not 'Data': hist.SetFillColor(COLORS[sample])
     hist.Draw()
-    save_dir = '/eos/user/q/qnguyen/www/InclusiveFeature_CR/'
+    save_dir = '/eos/user/q/qnguyen/www/InclusiveFeature_CR_NoMTcut/'
     if not os.path.isdir(save_dir): os.makedirs(save_dir)
     cv.SaveAs(save_dir+"/"+hist.GetName()+".png")
-    hist.Write()
-    cr.Close()
+    #hist.Write()
+    #cr.Close()
     return hist
 
 SAMPLES = {}
@@ -50,6 +49,16 @@ SAMPLES['QCD'] = {'file': filedir+"InclusiveControlRegion_OneLeptonFull_SingleLe
 SAMPLES['DYJets'] = {'file': filedir+"InclusiveControlRegion_OneLeptonFull_SingleLeptonSkim_Razor2016_MoriondRereco_DYJets_1pb_weighted.root"}
 SAMPLES['SingleTop'] = {'file': filedir+"InclusiveControlRegion_OneLeptonFull_SingleLeptonSkim_Razor2016_MoriondRereco_SingleTop_1pb_weighted.root"}
 SAMPLES['Data'] = {'file': filedir+"InclusiveControlRegion_OneLeptonFull_SingleLeptonSkim_Razor2016_MoriondRereco_Data_NoDuplicates_RazorSkim_GoodLumiGolden.root"}
+
+# Test files for quick and dirty check
+SAMPLES['WJets']['test'] = filedir+'jobs/InclusiveControlRegion_OneLeptonFull_SingleLeptonSkim_Razor2016_MoriondRereco_WJetsToLNu_Pt-250To400_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8.Job0of13.root'
+SAMPLES['TTJets']['test'] = filedir+'jobs/InclusiveControlRegion_OneLeptonFull_SingleLeptonSkim_Razor2016_MoriondRereco_TTJets_HT-600to800_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.Job15of19.root'
+SAMPLES['Other']['test'] = filedir+'jobs/InclusiveControlRegion_OneLeptonFull_SingleLeptonSkim_Razor2016_MoriondRereco_WWTo2L2Nu_13TeV-powheg.Job0of2.root'
+SAMPLES['QCD']['test'] = filedir+'jobs/InclusiveControlRegion_OneLeptonFull_SingleLeptonSkim_Razor2016_MoriondRereco_QCD_HT200to300_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.Job49of61.root'
+SAMPLES['DYJets']['test'] = filedir+'jobs/InclusiveControlRegion_OneLeptonFull_SingleLeptonSkim_Razor2016_MoriondRereco_DYJetsToLL_M-50_HT-200to400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.Job24of251.root'
+SAMPLES['SingleTop']['test'] = filedir+'jobs/InclusiveControlRegion_OneLeptonFull_SingleLeptonSkim_Razor2016_MoriondRereco_ST_t-channel_antitop_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1.Job121of678.root'
+SAMPLES['Data']['test'] = filedir+'/jobs/InclusiveControlRegion_OneLeptonFull_SingleLeptonSkim_Razor2016_MoriondRereco_SingleElectron_2016B_03Feb2017.Job145of199.root'
+
 
 for sample in SAMPLES:
     #SAMPLES[sample]['tree'] = rt.TFile.Open(SAMPLES[sample]['file']).Get('InclusiveControlRegion')

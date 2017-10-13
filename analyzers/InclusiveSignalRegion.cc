@@ -1836,7 +1836,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         for (auto &vars : mainVars) 
         {
             if (vars.second->leadingJetPt > 100
-                    && (vars.second->box == DiJet || vars.second->box == FourJet || vars.second->box == SixJet)) 
+                    && (vars.second->box == MultiJet || vars.second->box == MonoJet)) 
                 passCuts = true;
         }
 

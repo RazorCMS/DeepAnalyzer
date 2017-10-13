@@ -43,8 +43,9 @@ class RazorVarCollection
             leadingJetEta = -99.;
             leadingJetCISV = -99.;
             leadingTightMuPt = -99.; leadingTightElePt = -99.;
-            mT = -99.; mTLoose = -99.;
-            mTGenMET = -99.; mTLooseGenMET = -99.;
+            lep1MT = -99.; lep1MTLoose = -99.;
+            jet1MT = -99.;
+            lep1MTGenMET = -99.; lep1MTLooseGenMET = -99.;
             nSelectedJets = 0; nBTaggedJets = 0; nJets80 = 0;
             nVetoMuons = 0; nTightMuons = 0; nVetoElectrons = 0; nTightElectrons = 0;
             box = RazorAnalyzer::NONE;
@@ -79,8 +80,9 @@ class RazorVarCollection
                     ("leadingJetEta"+conn+tag+"/F").c_str());
             t->Branch(("leadingJetCISV"+conn+tag).c_str(), &leadingJetCISV, 
                     ("leadingJetCISV"+conn+tag+"/F").c_str());
-            t->Branch(("mT"+conn+tag).c_str(), &mT, ("mT"+conn+tag+"/F").c_str());
-            t->Branch(("mTLoose"+conn+tag).c_str(), &mTLoose, ("mTLoose"+conn+tag+"/F").c_str());
+            t->Branch(("lep1MT"+conn+tag).c_str(), &lep1MT, ("lep1MT"+conn+tag+"/F").c_str());
+            t->Branch(("jet1MT"+conn+tag).c_str(), &jet1MT, ("jet1MT"+conn+tag+"/F").c_str());
+            t->Branch(("lep1MTLoose"+conn+tag).c_str(), &lep1MTLoose, ("lep1MTLoose"+conn+tag+"/F").c_str());
             t->Branch(("nSelectedJets"+conn+tag).c_str(), &nSelectedJets, 
                     ("nSelectedJets"+conn+tag+"/I").c_str());
             t->Branch(("nBTaggedJets"+conn+tag).c_str(), &nBTaggedJets, 
@@ -94,8 +96,8 @@ class RazorVarCollection
                 t->Branch(("leadingTightElePt"+conn+tag).c_str(), &leadingTightElePt, 
                         ("leadingTightElePt"+conn+tag+"/F").c_str());
                 t->Branch(("RsqGenMET"+conn+tag).c_str(), &RsqGenMET, ("RsqGenMET"+conn+tag+"/F").c_str());
-                t->Branch(("mTGenMET"+conn+tag).c_str(), &mTGenMET, ("mTGenMET"+conn+tag+"/F").c_str());
-                t->Branch(("mTLooseGenMET"+conn+tag).c_str(), &mTLooseGenMET, ("mTLooseGenMET"+conn+tag+"/F").c_str());
+                t->Branch(("lep1MTGenMET"+conn+tag).c_str(), &lep1MTGenMET, ("lep1MTGenMET"+conn+tag+"/F").c_str());
+                t->Branch(("lep1MTLooseGenMET"+conn+tag).c_str(), &lep1MTLooseGenMET, ("lep1MTLooseGenMET"+conn+tag+"/F").c_str());
                 t->Branch(("nVetoMuons"+conn+tag).c_str(), &nVetoMuons, 
                         ("nVetoMuons"+conn+tag+"/I").c_str());
                 t->Branch(("nTightMuons"+conn+tag).c_str(), &nTightMuons, 
@@ -108,7 +110,7 @@ class RazorVarCollection
         }
 
         // List of variables
-        float MR,Rsq,RsqGenMET,dPhiRazor,leadingJetPt,subleadingJetPt,leadingTightMuPt,leadingTightElePt,mT,mTLoose,mTGenMET, mTLooseGenMET, leadingJetCISV, leadingJetEta;
+        float MR,Rsq,RsqGenMET,dPhiRazor,leadingJetPt,subleadingJetPt,leadingTightMuPt,leadingTightElePt,lep1MT,lep1MTLoose,lep1MTGenMET, lep1MTLooseGenMET, jet1MT, leadingJetCISV, leadingJetEta;
         float MT2, HT, MHT, alphaT, dPhiMinJetMET;
         int nSelectedJets,nBTaggedJets,nJets80;
         int nVetoMuons, nTightMuons, nVetoElectrons, nTightElectrons;
@@ -1528,11 +1530,11 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                     leadingLepton = vars.second->leadingTightEle;
                 }
                 float deltaPhiLepMET = leadingLepton.DeltaPhi(MyMET);
-                vars.second->mT = sqrt(2*leadingLepton.Pt()*MyMET.Pt()*(1.0 - cos(deltaPhiLepMET))); 
+                vars.second->lep1MT = sqrt(2*leadingLepton.Pt()*MyMET.Pt()*(1.0 - cos(deltaPhiLepMET))); 
                 if (vars.first == "") 
                 {
                     float deltaPhiLepGenMET = leadingLepton.DeltaPhi(GenMET);
-                    vars.second->mTGenMET = sqrt(2*leadingLepton.Pt()*GenMET.Pt()*(1.0 - cos(deltaPhiLepGenMET)));
+                    vars.second->lep1MTGenMET = sqrt(2*leadingLepton.Pt()*GenMET.Pt()*(1.0 - cos(deltaPhiLepGenMET)));
                 }
             }
 
@@ -1553,12 +1555,12 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                 if (maxLepIndex >= 0)
                 {
                     float deltaPhiLepMET = vars.second->GoodLeptons[maxLepIndex].DeltaPhi(MyMET);
-                    vars.second->mTLoose = sqrt(2*vars.second->GoodLeptons[maxLepIndex].Pt()*MyMET.Pt()*(1.0 
+                    vars.second->lep1MTLoose = sqrt(2*vars.second->GoodLeptons[maxLepIndex].Pt()*MyMET.Pt()*(1.0 
                                 - cos(deltaPhiLepMET)));
                     if (vars.first == "") 
                     {
                         float deltaPhiLepGenMET = vars.second->GoodLeptons[maxLepIndex].DeltaPhi(GenMET);
-                        vars.second->mTLooseGenMET = sqrt(2*vars.second->GoodLeptons[maxLepIndex].Pt()*GenMET.Pt()*(1.0 
+                        vars.second->lep1MTLooseGenMET = sqrt(2*vars.second->GoodLeptons[maxLepIndex].Pt()*GenMET.Pt()*(1.0 
                                     - cos(deltaPhiLepGenMET)));
                     }
                 }
@@ -1626,9 +1628,9 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                     + vars.second->nVetoElectrons + vars.second->nVetoMuons 
                     + vars.second->nTightElectrons + vars.second->nTightMuons == 0)
             {
-                if (vars.second->nSelectedJets > 3 && vars.second->leadingJetPt > 100 && vars.second->subleadingJetPt > 60) vars.second->box = MultiJet;
-                else if (vars.second->nSelectedJets > 1 && vars.second->leadingJetPt > 100 && vars.second->subleadingJetPt > 60) vars.second->box = DiJet;
-                else if (vars.second->nSelectedJets >=1 && vars.second->leadingJetPt > 100 && abs(vars.second->leadingJetEta) < 2.5) vars.second->box = MonoJet;
+                if (vars.second->nSelectedJets > 0 && vars.second->leadingJetPt > 100 && abs(vars.second->leadingJetEta) < 2.5 && vars.second->subleadingJetPt < 60) vars.second->box = MonoJet;
+                else if (vars.second->nSelectedJets > 3 && vars.second->subleadingJetPt > 60) vars.second->box = MultiJet;
+                else if (vars.second->nSelectedJets > 1 && vars.second->subleadingJetPt > 60) vars.second->box = DiJet;
             }
         }
 

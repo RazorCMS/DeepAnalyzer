@@ -1375,31 +1375,6 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
             }
         }
 
-        //Get leading and subleading jet pt
-        for (auto &vars : mainVars) 
-        {
-            TLorentzVector leadingJet;
-            TLorentzVector subleadingJet;
-            for (auto &jet : vars.second->GoodJets) 
-            {
-                if (jet.Pt() > vars.second->leadingJetPt)
-                {
-                    vars.second->subleadingJetPt = vars.second->leadingJetPt;
-                    subleadingJet = leadingJet;
-                    vars.second->leadingJetPt = jet.Pt();
-                    vars.second->leadingJetEta = jet.Eta();
-                    leadingJet = jet;
-                }
-                else if (jet.Pt() > vars.second->subleadingJetPt)
-                {
-                    vars.second->subleadingJetPt = jet.Pt();
-                    subleadingJet = jet;
-                }
-            }
-            if (vars.first == "") mjj_leadingJets = (leadingJet + subleadingJet).M();
-            vars.second->leadingJetCISV = _leadingJetCISV;
-        }
-
         /////////////////////////////////
         //Jet W/Top Tags
         /////////////////////////////////
@@ -1431,9 +1406,31 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         double Type1METYCorr = mainVars[""]->METYCorr;
         
         
-
         for (auto &vars : mainVars) 
         {
+            //Get leading and subleading jet pt
+            TLorentzVector leadingJet;
+            TLorentzVector subleadingJet;
+            for (auto &jet : vars.second->GoodJets) 
+            {
+                if (jet.Pt() > vars.second->leadingJetPt)
+                {
+                    vars.second->subleadingJetPt = vars.second->leadingJetPt;
+                    subleadingJet = leadingJet;
+                    vars.second->leadingJetPt = jet.Pt();
+                    vars.second->leadingJetEta = jet.Eta();
+                    leadingJet = jet;
+                }
+                else if (jet.Pt() > vars.second->subleadingJetPt)
+                {
+                    vars.second->subleadingJetPt = jet.Pt();
+                    subleadingJet = jet;
+                }
+            }
+            if (vars.first == "") mjj_leadingJets = (leadingJet + subleadingJet).M();
+            vars.second->leadingJetCISV = _leadingJetCISV;
+
+
             // Get HT & MHT
             float myHT = 0.;
             float MHTx = 0.;
@@ -1566,6 +1563,10 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                 }
 
             }
+
+            // Tranverse mass with leading jet, lep1MT
+            float _deltaPhiJetMET = leadingJet.DeltaPhi(MyMET);
+            vars.second->jet1MT = sqrt(2*leadingJet.Pt()*MyMET.Pt()*(1.0 - cos(_deltaPhiJetMET))); 
         }
 
         //////////////////////////////////////////////////////

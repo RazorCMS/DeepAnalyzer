@@ -1,6 +1,6 @@
 import copy
 
-VERSION = "V3p15_4Oct2017_Inclusive"
+VERSION = "V3p15_13Oct2017_Inclusive"
 
 TREETYPES = { '1L':'OneLeptonFull',
               '1LInv':'OneLeptonAddToMET',

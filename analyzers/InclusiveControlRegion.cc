@@ -1211,7 +1211,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         events->dPhiMinJetMETN = 9999;
 
         float mhx = 0., mhy = 0., mhx_nohf = 0., mhy_nohf = 0.;
-
+        float leadingJetCISV = 0., leadingJetPt = 0.;
         for(int i = 0; i < nJets; i++)
         {
             //exclude Good leptons from the jet collection
@@ -1373,7 +1373,12 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
                 mhx -= jetPt[i]*JEC*jetEnergySmearFactor*cos(jetPhi[i]);
                 mhy -= jetPt[i]*JEC*jetEnergySmearFactor*sin(jetPhi[i]);
             }
-
+            
+            if (jetPt[i] > leadingJetPt)
+            {
+                leadingJetPt = jetPt[i];
+                leadingJetCISV = jetCISV[i];
+            }
 
             nSelectedJets++;
             if(jetPt[i]*JEC*jetEnergySmearFactor > 80) numJetsAbove80GeV++;	  
@@ -1426,7 +1431,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
                 if(isCSVT(i)) events->jet2PassCSVTight = true; 	   	
             }
         }
-
+        events->leadingJetCISV = leadingJetCISV;
         //***************************************************************
         //compute dPhiMinJetMET variables
         //***************************************************************

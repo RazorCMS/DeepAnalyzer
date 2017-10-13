@@ -134,6 +134,7 @@ class ControlSampleEvents {
   TLorentzVector          jet2;     
   Float_t                 leadingJetPt;
   Float_t                 subleadingJetPt; 
+  Float_t                 leadingJetCISV;
   Bool_t                  jet1PassCSVLoose;
   Bool_t                  jet1PassCSVMedium;
   Bool_t                  jet1PassCSVTight;
@@ -403,6 +404,7 @@ class ControlSampleEvents {
     jet1                 = TLorentzVector();
     jet2                 = TLorentzVector();
     leadingJetPt         = 0.0;
+    leadingJetCISV       = 0.0;
     subleadingJetPt      = 0.0;
     jet1PassCSVLoose     = 0.0;
     jet1PassCSVMedium    = 0.0;
@@ -740,6 +742,7 @@ class ControlSampleEvents {
       tree_->Branch("METPhi",&METPhi,"METPhi/F");
       tree_->Branch("leadingJetPt",&leadingJetPt,"leadingJetPt/F");
       tree_->Branch("subleadingJetPt",&subleadingJetPt,"subleadingJetPt/F");
+      tree_->Branch("leadingJetCISV",&leadingJetCISV,"leadingJetCISV/F");
 
       if (use_full_tree)
       {

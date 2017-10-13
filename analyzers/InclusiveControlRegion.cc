@@ -1577,6 +1577,9 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         events->lep1MT = sqrt(events->lep1.M2() + 2*MyMET.Pt()*events->lep1.Pt()*(1 - cos(deltaPhi(MyMET.Phi(),events->lep1.Phi()))));
         events->lep1MTnoHF = sqrt(events->lep1.M2() + 2*PFMETnoHFType1.Pt()*events->lep1.Pt()*(1 - cos(deltaPhi(PFMETnoHFType1.Phi(),events->lep1.Phi()))));
 
+        // compute M_T for jet1 and MET
+        events->jet1MT = sqrt(events->jet1.M2() + 2*MyMET.Pt()*events->jet1.Pt()*(1 - cos(deltaPhi(MyMET.Phi(),events->jet1.Phi()))));
+
         //save HLT Decisions
         for(int k=0; k<200; ++k) {
             events->HLTDecision[k] = HLTDecision[k];	

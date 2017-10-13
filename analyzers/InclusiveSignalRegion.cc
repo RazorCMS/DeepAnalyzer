@@ -1268,7 +1268,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                             vars.second->GoodPFObjects.push_back(thisJet);
                             vars.second->nSelectedJets++;
                             if (jetCorrPt > 80) vars.second->nJets80++;
-                            if (jetCorrPt < _leadingJetPt)
+                            if (jetCorrPt > _leadingJetPt)
                             {
                                 _leadingJetPt = jetCorrPt;
                                 _leadingJetCISV = jetCISV[i];

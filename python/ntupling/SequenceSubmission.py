@@ -124,7 +124,7 @@ def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--tag', help = '1L, 2L, ...', required = True)
-    parser.add_argument('--label', help = 'Label for RazorRun', default='Razor2016_MoriondRereco', required = True)
+    parser.add_argument('--label', help = 'Label for RazorRun', default='Razor2016_MoriondRereco', default='Razor2016_MoriondRereco')
     parser.add_argument('--data', action = 'store_true', help = 'Run on data (MC otherwise)')
     parser.add_argument('--force', action = 'store_true', help = 'Force action if file exists')
     parser.add_argument('--no-sub', dest = 'noSub', action = 'store_true', help = 'Print commands but do not submit')

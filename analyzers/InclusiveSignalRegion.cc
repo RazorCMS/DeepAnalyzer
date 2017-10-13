@@ -40,6 +40,7 @@ class RazorVarCollection
             RsqGenMET = -99.;
             HT = -99.; MHT = -99.;
             leadingJetPt = -99.; subleadingJetPt = -99.; 
+            leadingJetCISV = -99.;
             leadingTightMuPt = -99.; leadingTightElePt = -99.;
             mT = -99.; mTLoose = -99.;
             mTGenMET = -99.; mTLooseGenMET = -99.;
@@ -73,6 +74,8 @@ class RazorVarCollection
                     ("leadingJetPt"+conn+tag+"/F").c_str());
             t->Branch(("subleadingJetPt"+conn+tag).c_str(), &subleadingJetPt, 
                     ("subleadingJetPt"+conn+tag+"/F").c_str());
+            t->Branch(("leadingJetCISV"+conn+tag).c_str(), &leadingJetCISV, 
+                    ("leadingJetCISV"+conn+tag+"/F").c_str());
             t->Branch(("mT"+conn+tag).c_str(), &mT, ("mT"+conn+tag+"/F").c_str());
             t->Branch(("mTLoose"+conn+tag).c_str(), &mTLoose, ("mTLoose"+conn+tag+"/F").c_str());
             t->Branch(("nSelectedJets"+conn+tag).c_str(), &nSelectedJets, 
@@ -102,7 +105,7 @@ class RazorVarCollection
         }
 
         // List of variables
-        float MR,Rsq,RsqGenMET,dPhiRazor,leadingJetPt,subleadingJetPt,leadingTightMuPt,leadingTightElePt,mT,mTLoose,mTGenMET, mTLooseGenMET;
+        float MR,Rsq,RsqGenMET,dPhiRazor,leadingJetPt,subleadingJetPt,leadingTightMuPt,leadingTightElePt,mT,mTLoose,mTGenMET, mTLooseGenMET, leadingJetCISV;
         float MT2, HT, MHT, alphaT, dPhiMinJetMET;
         int nSelectedJets,nBTaggedJets,nJets80;
         int nVetoMuons, nTightMuons, nVetoElectrons, nTightElectrons;
@@ -1189,7 +1192,9 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
         const int JET_CUT = 30;
         const int BJET_CUT = 30;
         const float JET_ETA_CUT = 3.0;
-        
+       
+        float _leadingJetCISV = 0., _leadingJetPt = 0.; 
+
         //Loop jets
         for (int i = 0; i < nJets; i++)
         {
@@ -1258,6 +1263,11 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                             vars.second->GoodPFObjects.push_back(thisJet);
                             vars.second->nSelectedJets++;
                             if (jetCorrPt > 80) vars.second->nJets80++;
+                            if (jetCorrPt < _leadingJetPt)
+                            {
+                                _leadingJetPt = jetCorrPt;
+                                _leadingJetCISV = jetCISV[i];
+                            }
                         }
                     }
                 }
@@ -1381,6 +1391,7 @@ void InclusiveSignalRegion::Analyze(bool isData, int option, string outFileName,
                 }
             }
             if (vars.first == "") mjj_leadingJets = (leadingJet + subleadingJet).M();
+            vars.second->leadingJetCISV = _leadingJetCISV;
         }
 
         /////////////////////////////////

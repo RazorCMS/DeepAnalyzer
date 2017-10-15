@@ -87,9 +87,9 @@ def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force
                         print "Removing {}".format(line)
                         line = line.replace('\n','')
                         os.remove(line)
+                    if (email is not ''): send_email(label, tag, data, email, finished=False)
                     sub_sequence(tag=tag, isData=isData, submit=submit, label=label, skipSub=False, email=email, fastSim=fastSim, queue='8nh') # Have to resubmit after deleting zombies, move to 8nh queue
 
-                    if (email is not None): send_email(label, tag, data, email, finished=False)
                     
         # If skipSub and noZombies are specified, start the sequence at hadd
         cmd_hadd = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--hadd', nosub, '--label', label, data, force, fastsim]))

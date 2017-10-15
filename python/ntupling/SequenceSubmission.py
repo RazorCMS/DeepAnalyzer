@@ -87,7 +87,7 @@ def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force
                         print "Removing {}".format(line)
                         line = line.replace('\n','')
                         os.remove(line)
-                    sub_sequence(tag, isData, submit, label, skipSub, email, fastSim)
+                    sub_sequence(tag=tag, isData=isData, submit=submit, label=label, skipSub=False, email=email, fastSim=fastSim) # Have to resubmit after deleting zombies
 
                     if (email is not None): send_email(label, tag, data, email, finished=False)
                     

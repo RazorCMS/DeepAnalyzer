@@ -38,7 +38,7 @@ def send_email(label, tag, data, email, finished=True):
     s.quit()
 
 
-def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force=False, email='', fastSim=False, noZombies=False):
+def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force=False, email='', fastSim=False, noZombies=False, queue='1nh'):
     basedir = os.environ['CMSSW_BASE']+'/src/RazorAnalyzer'
     if not submit: 
         nosub = '--no-sub'
@@ -58,13 +58,13 @@ def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force
         fastsim = ''
 
     if not submit and not skipSub: # --no-sub, only execute the submit command
-        cmd_submit = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--submit', nosub, '--label', label, data, fastsim]))
+        cmd_submit = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--submit', nosub, '--label', label, data, fastsim, '--queue', queue]))
         print ' '.join(cmd_submit)
         subprocess.call(cmd_submit)
     
     if submit: 
         if not skipSub: # execute the whole sequence
-            cmd_submit = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--submit', nosub, '--label', label, data, fastsim]))
+            cmd_submit = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--submit', nosub, '--label', label, data, fastsim, '--queue', queue]))
             print ' '.join(cmd_submit)
             subprocess.call(cmd_submit)
             job_done = False
@@ -87,7 +87,7 @@ def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force
                         print "Removing {}".format(line)
                         line = line.replace('\n','')
                         os.remove(line)
-                    sub_sequence(tag=tag, isData=isData, submit=submit, label=label, skipSub=False, email=email, fastSim=fastSim) # Have to resubmit after deleting zombies
+                    sub_sequence(tag=tag, isData=isData, submit=submit, label=label, skipSub=False, email=email, fastSim=fastSim, queue='8nh') # Have to resubmit after deleting zombies, move to 8nh queue
 
                     if (email is not None): send_email(label, tag, data, email, finished=False)
                     
@@ -132,8 +132,9 @@ if __name__ == '__main__':
     parser.add_argument('--skip-sub', dest = 'skipSub', action = 'store_true', help = 'Start the sequence at the hadd step')
     parser.add_argument('--fastsim', action = 'store_true', help = 'Action for fastsim')
     parser.add_argument('--no-zombies', action = 'store_true', dest='noZombies', help = 'We know for sure there is no zombies. Skip --find-zombies step')
+    parser.add_argument('--queue', help = 'Queue to submit jobs', default='1nh')
 
 
     args = parser.parse_args()
     
-    sub_sequence(args.tag, args.data, (not args.noSub), args.label, args.skipSub, args.force, args.email, args.fastsim, args.noZombies)
+    sub_sequence(args.tag, args.data, (not args.noSub), args.label, args.skipSub, args.force, args.email, args.fastsim, args.noZombies, args.queue)

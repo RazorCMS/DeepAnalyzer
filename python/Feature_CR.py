@@ -35,7 +35,7 @@ COLORS = {
 
 def draw_plot(hist, tree, feature, sample):
     cv = rt.TCanvas("cv","",700,600)
-    lumi = "35.9"
+    lumi = "35.9*1000"
     if sample is "Data": lumi = "1."
     hist.SetLineWidth(3)
     if sample is not 'Data': 

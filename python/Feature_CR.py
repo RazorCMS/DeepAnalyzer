@@ -41,7 +41,7 @@ def draw_plot(hist, tree, feature, sample):
     if sample is not 'Data': 
         hist.SetFillColor(COLORS[sample])
         hist.SetLineColor(COLORS[sample])
-    tree.Draw(feature+">>"+hist.GetName(),"weight*"+lumi+"*((abs(lep1Type) == 11 || abs(lep1Type) == 13) && lep1PassTight && ((abs(lep1Type) == 11 && lep1.Pt() > 30) || (abs(lep1Type) == 13 && lep1.Pt() > 25)))")
+    tree.Draw(feature+">>"+hist.GetName(),"weight*"+lumi+"*((abs(lep1Type) == 11 || abs(lep1Type) == 13) && lep1PassTight && ((abs(lep1Type) == 11 && lep1.Pt() > 30) || (abs(lep1Type) == 13 && lep1.Pt() > 25)) && MET > 100)")
     if not os.path.isdir(SAVEDIR): os.makedirs(SAVEDIR)
     if hist.Integral() > 0:
         cv.SaveAs(SAVEDIR+"/"+hist.GetName()+".png")
@@ -130,5 +130,5 @@ for feature in SAMPLES['Data']['feature']:
     leg = cv.BuildLegend(0.5,0.7,0.85,0.88)
     leg.SetNColumns(2)
     if not os.path.isdir(SAVEDIR): os.makedirs(SAVEDIR)
-    cv.SaveAs(SAVEDIR+"/"+feature+".png")
+    cv.SaveAs(SAVEDIR+"/_"+feature+".png")
 

@@ -41,7 +41,7 @@ def draw_plot(hist, tree, feature, sample):
     if 'T2qq' not in sample: 
         hist.SetFillColor(COLORS[sample])
         hist.SetLineColor(COLORS[sample])
-    tree.Draw(feature+">>"+hist.GetName(),"weight*"+lumi+"*(leadingJetPt>100 && (box==21 || box==22))")
+    tree.Draw(feature+">>"+hist.GetName(),"weight*"+lumi+"*(leadingJetPt>100 && MET > 100 && (box==21 || box==22))")
     if not os.path.isdir(SAVEDIR): os.makedirs(SAVEDIR)
     if hist.Integral() > 0:
         cv.SaveAs(SAVEDIR+"/"+hist.GetName()+".png")
@@ -187,5 +187,5 @@ for feature in SAMPLES['WJets']['feature']:
     leg = cv.BuildLegend(0.5,0.7,0.85,0.88)
     leg.SetNColumns(2)
     if not os.path.isdir(SAVEDIR): os.makedirs(SAVEDIR)
-    cv.SaveAs(SAVEDIR+"/"+feature+".png")
+    cv.SaveAs(SAVEDIR+"/_"+feature+".png")
 

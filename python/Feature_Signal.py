@@ -79,10 +79,9 @@ SAMPLES['QCD']['test'] = filedir+'jobs/InclusiveSignalRegion_Razor2016_MoriondRe
 SAMPLES['DYJets']['test'] = filedir+'jobs/InclusiveSignalRegion_Razor2016_MoriondRereco_DYJetsToLL_M-50_HT-200to400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.Job24of251.root'
 SAMPLES['SingleTop']['test'] = filedir+'jobs/InclusiveSignalRegion_Razor2016_MoriondRereco_ST_t-channel_antitop_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1.Job121of678.root'
 SAMPLES['ZInv']['test'] = filedir+"/jobs/InclusiveSignalRegion_Razor2016_MoriondRereco_ZJetsToNuNu_HT-200To400_13TeV-madgraph.Job201of512.root"
-SAMPLES['T2qq_1450_1400'] = {'test': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_1450_1400.root"}
-SAMPLES['T2qq_450_425'] = {'test': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_450_425.root"}
-SAMPLES['T2qq_900_100'] = {'test': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_900_100.root"}
-
+SAMPLES['T2qq_1450_1400']['test'] = filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_1450_1400.root"
+SAMPLES['T2qq_450_425']['test'] = filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_450_425.root"
+SAMPLES['T2qq_900_100']['test'] = filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_900_100.root"
    
 print SAMPLES['WJets']['file']
 

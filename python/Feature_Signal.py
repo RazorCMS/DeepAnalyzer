@@ -82,7 +82,7 @@ print SAMPLES['WJets']['file']
 
 for sample in SAMPLES:
     if sample is not "Signal":
-        _file = rt.TFile.Open(SAMPLES[sample]['file'])
+        _file = rt.TFile.Open(SAMPLES[sample]['test'])
         _tree = _file.Get('InclusiveSignalRegion')
         
         SAMPLES[sample]['feature'] = {}
@@ -124,6 +124,8 @@ for sample in SAMPLES:
             _file = rt.TFile.Open(SAMPLES['Signal'][sms]['file'])
             assert(_file)
             _tree = _file.Get('InclusiveSignalRegion')
+            
+            random.shuffle(features)
             for feature in features:
                 SAMPLES['Signal'][sms]['feature'][feature] = SAMPLES[SAMPLES.keys()[0]]['feature'][feature].Clone()
                 SAMPLES['Signal'][sms]['feature'][feature].SetNameTitle(sms+"_"+feature, sms)
@@ -131,6 +133,14 @@ for sample in SAMPLES:
 
                 draw_plot(SAMPLES['Signal'][sms]['feature'][feature], _tree, feature, sms)
                 save_plot(SAMPLES['Signal'][sms]['feature'][feature], _tree, feature, sms)
+            
+            for feature in features:
+                _thishist = SAMPLES['Signal'][sms]['feature'][feature]
+                if _thishist.Integral() == 0:
+                    print "Redone {}_{} for a stupid pyROOT pointer/ownership problem that does not fill in the first histogram".format(sms,feature)
+                    draw_plot(_thishist, _tree, feature, sms) 
+                    save_plot(_thishist, _tree, feature, sms)
+
 
 STACKS = {}
 NORM_STACKS = {}

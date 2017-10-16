@@ -36,7 +36,7 @@ COLORS = {
 def draw_plot(hist, tree, feature, sample):
     cv = rt.TCanvas("cv","",700,600)
     lumi = "35.9"
-    if sample is "Signal": lumi = "1."
+    if 'T2qq' in sample: lumi = "1."
     hist.SetLineWidth(3)
     if 'T2qq' not in sample: 
         hist.SetFillColor(COLORS[sample])
@@ -67,7 +67,9 @@ SAMPLES['DYJets'] = {'file': filedir+"InclusiveSignalRegion_Razor2016_MoriondRer
 SAMPLES['SingleTop'] = {'file': filedir+"InclusiveSignalRegion_Razor2016_MoriondRereco_SingleTop_1pb_weighted.root"}
 SAMPLES['ZInv'] = {'file': filedir+"InclusiveSignalRegion_Razor2016_MoriondRereco_ZInv_1pb_weighted.root"}
 
-SAMPLES['Signal'] = {'T2qq_1450_1400': {'file': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_1450_1400.root"}, 'T2qq_450_425': {'file': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_450_425.root"}, 'T2qq_900_100': {'file': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_900_100.root"}}
+SAMPLES['T2qq_1450_1400'] = {'file': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_1450_1400.root"}
+SAMPLES['T2qq_450_425'] = {'file': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_450_425.root"}
+SAMPLES['T2qq_900_100'] = {'file': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_900_100.root"}
 
 # Test files for quick and dirty check
 SAMPLES['WJets']['test'] = filedir+'jobs/InclusiveSignalRegion_Razor2016_MoriondRereco_WJetsToLNu_Pt-250To400_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8.Job0of13.root'
@@ -77,12 +79,15 @@ SAMPLES['QCD']['test'] = filedir+'jobs/InclusiveSignalRegion_Razor2016_MoriondRe
 SAMPLES['DYJets']['test'] = filedir+'jobs/InclusiveSignalRegion_Razor2016_MoriondRereco_DYJetsToLL_M-50_HT-200to400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.Job24of251.root'
 SAMPLES['SingleTop']['test'] = filedir+'jobs/InclusiveSignalRegion_Razor2016_MoriondRereco_ST_t-channel_antitop_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1.Job121of678.root'
 SAMPLES['ZInv']['test'] = filedir+"/jobs/InclusiveSignalRegion_Razor2016_MoriondRereco_ZJetsToNuNu_HT-200To400_13TeV-madgraph.Job201of512.root"
+SAMPLES['T2qq_1450_1400'] = {'test': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_1450_1400.root"}
+SAMPLES['T2qq_450_425'] = {'test': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_450_425.root"}
+SAMPLES['T2qq_900_100'] = {'test': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_900_100.root"}
+
    
 print SAMPLES['WJets']['file']
 
 for sample in SAMPLES:
-    if sample is not "Signal":
-        _file = rt.TFile.Open(SAMPLES[sample]['test'])
+        _file = rt.TFile.Open(SAMPLES[sample]['file'])
         _tree = _file.Get('InclusiveSignalRegion')
         
         SAMPLES[sample]['feature'] = {}
@@ -117,30 +122,29 @@ for sample in SAMPLES:
                 draw_plot(_hist, _tree, feature, sample) 
                 save_plot(_hist, _tree, feature, sample)
     
-    # Draw sms signal
-    elif sample is "Signal":
-        for sms in SAMPLES['Signal']:
-            SAMPLES['Signal'][sms]['feature'] = {}
-            _file = rt.TFile.Open(SAMPLES['Signal'][sms]['file'])
-            assert(_file)
-            _tree = _file.Get('InclusiveSignalRegion')
-            
-            random.shuffle(features)
-            for feature in features:
-                SAMPLES['Signal'][sms]['feature'][feature] = SAMPLES[SAMPLES.keys()[0]]['feature'][feature].Clone()
-                SAMPLES['Signal'][sms]['feature'][feature].SetNameTitle(sms+"_"+feature, sms)
-                SAMPLES['Signal'][sms]['feature'][feature].SetDirectory(rt.gROOT)
-
-                draw_plot(SAMPLES['Signal'][sms]['feature'][feature], _tree, feature, sms)
-                save_plot(SAMPLES['Signal'][sms]['feature'][feature], _tree, feature, sms)
-            
-            for feature in features:
-                _thishist = SAMPLES['Signal'][sms]['feature'][feature]
-                if _thishist.Integral() == 0:
-                    print "Redone {}_{} for a stupid pyROOT pointer/ownership problem that does not fill in the first histogram".format(sms,feature)
-                    draw_plot(_thishist, _tree, feature, sms) 
-                    save_plot(_thishist, _tree, feature, sms)
-
+#    # Draw sms signal
+#    elif sample is "Signal":
+#        for sms in SAMPLES['Signal']:
+#            SAMPLES['Signal'][sms]['feature'] = {}
+#            _file = rt.TFile.Open(SAMPLES['Signal'][sms]['file'])
+#            assert(_file)
+#            _tree = _file.Get('InclusiveSignalRegion')
+#            
+#            for feature in features:
+#                SAMPLES['Signal'][sms]['feature'][feature] = SAMPLES[SAMPLES.keys()[0]]['feature'][feature].Clone()
+#                SAMPLES['Signal'][sms]['feature'][feature].SetNameTitle(sms+"_"+feature, sms)
+#                SAMPLES['Signal'][sms]['feature'][feature].SetDirectory(rt.gROOT)
+#
+#                draw_plot(SAMPLES['Signal'][sms]['feature'][feature], _tree, feature, sms)
+#                save_plot(SAMPLES['Signal'][sms]['feature'][feature], _tree, feature, sms)
+#            
+#            for feature in features:
+#                _thishist = SAMPLES['Signal'][sms]['feature'][feature]
+#                if _thishist.Integral() == 0:
+#                    print "Redone {}_{} for a stupid pyROOT pointer/ownership problem that does not fill in the first histogram".format(sms,feature)
+#                    draw_plot(_thishist, _tree, feature, sms) 
+#                    save_plot(_thishist, _tree, feature, sms)
+#
 
 STACKS = {}
 NORM_STACKS = {}
@@ -151,7 +155,7 @@ for feature in SAMPLES['WJets']['feature']:
 savefile = rt.TFile.Open(SAVEFILE,"read")
 for sample in SAMPLES:
     for feature in SAMPLES['WJets']['feature']:
-        if sample is not 'Signal': 
+        if 'T2qq' not in sample: 
             _myHist = savefile.Get(sample+"_"+feature)
             _myHist.SetLineColor(COLORS[sample])
             _myHist.SetFillColor(COLORS[sample])
@@ -159,7 +163,7 @@ for sample in SAMPLES:
 
 for sample in SAMPLES:
     for feature in SAMPLES['WJets']['feature']:
-        if sample is not 'Signal': 
+        if 'T2qq' not in sample: 
             _myHist = savefile.Get(sample+"_"+feature)
             _myHist.Scale(1./sum_stack(STACKS[feature]))
             _myHist.SetLineColor(COLORS[sample])
@@ -171,7 +175,7 @@ for feature in SAMPLES['WJets']['feature']:
     NORM_STACKS[feature].Draw("hist")
     maxy = []
     maxy.append(NORM_STACKS[feature].GetMaximum())
-    for i,sms in enumerate(SAMPLES['Signal']):
+    for i,sms in enumerate([key for key in SAMPLES.keys() if 'T2qq' in key]):
         _myHist = savefile.Get(sms+"_"+feature)
         _myHist.SetLineWidth(2)
         _myHist.SetLineStyle(i+2)

@@ -11,7 +11,8 @@ SAVEFILE = 'SignalRegionPlots.root'
 newfile = rt.TFile(SAVEFILE,"recreate")
 newfile.Close()
 
-SAVEDIR = '/eos/user/q/qnguyen/www/InclusiveFeature_Signal/'
+SAVEDIR = '/eos/user/q/qnguyen/www/InclusiveFeature_Signal_MET100_MHT100/'
+CUT = 'leadingJetPt>100 && MET > 100 && MHT > 100 && (box==21 || box==22)'
 
 COLORS = {
         "WJets":rt.kRed+1, 
@@ -41,7 +42,7 @@ def draw_plot(hist, tree, feature, sample):
     if 'T2qq' not in sample: 
         hist.SetFillColor(COLORS[sample])
         hist.SetLineColor(COLORS[sample])
-    tree.Draw(feature+">>"+hist.GetName(),"weight*"+lumi+"*(leadingJetPt>100 && MET > 100 && (box==21 || box==22))")
+    tree.Draw(feature+">>"+hist.GetName(),"weight*"+lumi+"*("+CUT+")")
     if not os.path.isdir(SAVEDIR): os.makedirs(SAVEDIR)
     if hist.Integral() > 0:
         cv.SaveAs(SAVEDIR+"/"+hist.GetName()+".png")
@@ -83,7 +84,7 @@ SAMPLES['T2qq_1450_1400']['test'] = filedir.replace("Signal/","SignalFastsim/")+
 SAMPLES['T2qq_450_425']['test'] = filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_450_425.root"
 SAMPLES['T2qq_900_100']['test'] = filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_900_100.root"
    
-print SAMPLES['WJets']['file']
+print SAMPLES['WJets']['test']
 
 for sample in SAMPLES:
         _file = rt.TFile.Open(SAMPLES[sample]['file'])
@@ -158,6 +159,7 @@ for sample in SAMPLES:
             _myHist = savefile.Get(sample+"_"+feature)
             _myHist.SetLineColor(COLORS[sample])
             _myHist.SetFillColor(COLORS[sample])
+            _myHist.SetMarkerColor(COLORS[sample])
             STACKS[feature].Add(_myHist)
 
 for sample in SAMPLES:
@@ -167,6 +169,7 @@ for sample in SAMPLES:
             _myHist.Scale(1./sum_stack(STACKS[feature]))
             _myHist.SetLineColor(COLORS[sample])
             _myHist.SetFillColor(COLORS[sample])
+            _myHist.SetMarkerColor(COLORS[sample])
             NORM_STACKS[feature].Add(_myHist)
 
 for feature in SAMPLES['WJets']['feature']:

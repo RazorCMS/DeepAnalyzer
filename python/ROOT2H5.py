@@ -107,4 +107,5 @@ for sample in SAMPLES:
 all_h5.create_dataset('Feature', data = all_stack_feature, compression='gzip')
 all_h5.create_dataset('Weight', data = all_stack_weight, compression='gzip')
 all_h5.create_dataset('Label', data = all_stack_label, dtype='int8')
+all_h5.close()
 print "Save to {}".format(SAVEDIR+'/SignalInclusive.h5')

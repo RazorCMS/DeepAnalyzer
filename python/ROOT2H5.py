@@ -1,11 +1,10 @@
 import ROOT as rt
-import h5py
-import numpy as np
+from root_numpy import root2array, tree2array
 import os
 import argparse
-
-# Make a numpy array containing 14 Features
-# Features (in order): alphaT, dPhiMinJetMET, dPhiRazor, HT, jet1MT, leadingJetCISV, leadingJetPt, MET, MHT, MR, MT2, nSelectedJets, Rsq, subleadingJetPt
+import numpy as np
+import h5py
+import numpy.lib.recfunctions as nlr
 
 SAVEDIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/h5/'
 if not os.path.isdir(SAVEDIR): os.makedirs(SAVEDIR)
@@ -34,104 +33,66 @@ SAMPLES['ZInv']['test'] = filedir+"/jobs/InclusiveSignalRegion_Razor2016_Moriond
 SAMPLES['T2qq_900_850']['test'] = filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_900_850.root"
 
 
-# Save everything into 1 file
-#all_h5 = h5py.File(SAVEDIR+'/SignalInclusive.h5','w')
-#all_stack_feature = np.empty(shape=14, dtype=np.float32)
-#all_stack_feature[:] = np.NAN
-#all_stack_weight = np.empty(shape=1, dtype=np.float32)
-#all_stack_label = np.empty(shape=1, dtype=np.int8)
+def convert(tree, sample=''):
+
+    if sample is not '': 
+        print "Transforming {} events from {}".format(tree.GetEntries(), sample)
+    else:
+        print "Processing {} events".format(tree.GetEntries())
+
+    feature = tree2array(tree,
+            branches = ['weight','alphaT','dPhiMinJetMET','dPhiRazor','HT','jet1MT','leadingJetCISV','leadingJetPt','MET','MHT','MR','MT2','nSelectedJets','Rsq','subleadingJetPt'],
+            selection = CUT)
+    if 'T2qq' in sample:
+        label = np.ones(shape=(feature.shape), dtype = [('label','i4')])
+    else:
+        label = np.zeros(shape=(feature.shape), dtype = [('label','i4')])
+    data = nlr.merge_arrays([label,feature], flatten=True) 
+    print "{} selected events converted to h5py".format(data.shape[0])
+    return data
 
 parser = argparse.ArgumentParser()
-parser.add_argument('sample', help='Sample to process (WJets, TTJets, etc.)', choices=['WJets','TTJets','Other','QCD','DYJets','SingleTop','ZInv','T2qq_900_850'])
+group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument('-s','--sample', help='Sample to process (WJets, TTJets, etc.)', choices=['WJets','TTJets','Other','QCD','DYJets','SingleTop','ZInv','T2qq_900_850'])
+group.add_argument('-a','--all', action='store_true', help='Run all samples')
 parser.add_argument('-t','--test', action='store_true', help='Run a very small test sample')
-#parser.add_argument('-a','--all', help='Run all samples')
 
 args = parser.parse_args()
 
 if args.test: 
+    print "Using small test samples"
     loca = 'test'
 else:
     loca = 'file'
 
-#for sample in SAMPLES:
-sample = args.sample
-outh5 = h5py.File(SAVEDIR+'/'+sample+'.h5','w')
+if args.all: # Save all into 1 files
+    print "Processing all files..."
+    all_h5 = h5py.File(SAVEDIR+'/Inclusive.h5','w')
+    chain = rt.TChain("InclusiveSignalRegion")
+    signal_chain = rt.TChain("InclusiveSignalRegion")
+    for sample in SAMPLES:
+        if 'T2qq' in sample: 
+            signal_chain.AddFile(SAMPLES[sample][loca])
+        else:
+            chain.AddFile(SAMPLES[sample][loca])
+    background = convert(chain)
+    signal = convert(signal_chain,'T2qq_900_850')
+    all_data = np.hstack((background,signal))
+    all_h5['Data'] = all_data
+    all_h5.close()
+    print "Save to {}".format(SAVEDIR+'/Inclusive.h5')
 
-stack_feature = np.empty(shape=14, dtype=np.float32)
-stack_feature[:] = np.NAN
-stack_weight = np.empty(shape=1, dtype=np.float32)
-stack_weight[:] = np.NAN
-_file = rt.TFile.Open(SAMPLES[sample][loca])
-_tree = _file.Get('InclusiveSignalRegion')
+else:
+    sample = args.sample
+    outh5 = h5py.File(SAVEDIR+'/'+sample+'.h5','w')
 
-NEntries = _tree.GetEntries()
-print "Begin processing {} entries in {}".format(NEntries, sample)
+    _file = rt.TFile.Open(SAMPLES[sample][loca])
+    _tree = _file.Get('InclusiveSignalRegion')
 
-_tree.Draw('>>elist', CUT, 'entrylist')
-elist = rt.gDirectory.Get('elist')
-NPass = elist.GetN()
-print "Total entries passing cuts: {}".format(NPass)
+    outh5['Data'] = convert(_tree, sample)
 
-count = 0
-while True:
-    entry = elist.Next()
-    if entry == -1: break
-    if count > 0 and count % 10000 == 0: print "Processing entry {}/{}".format(count, NPass)
-    _tree.GetEntry(entry)
-    count += 1
+    print "Save to {}".format(SAVEDIR+'/'+sample+'.h5')
+    outh5.close()
+    _file.Close()
 
-    # Features (in order): alphaT, dPhiMinJetMET, dPhiRazor, HT, jet1MT, leadingJetCISV, leadingJetPt, MET, MHT, MR, MT2, nSelectedJets, Rsq, subleadingJetPt
-    feature = np.empty(shape=14, dtype=np.float32)
-    feature[0] = _tree.alphaT
-    feature[1] = _tree.dPhiMinJetMET
-    feature[2] = _tree.dPhiRazor
-    feature[3] = _tree.HT
-    feature[4] = _tree.jet1MT
-    feature[5] = _tree.leadingJetCISV
-    feature[6] = _tree.leadingJetPt
-    feature[7] = _tree.MET
-    feature[8] = _tree.MHT
-    feature[9] = _tree.MR
-    feature[10] = _tree.MT2
-    feature[11] = _tree.nSelectedJets
-    feature[12] = _tree.Rsq
-    feature[13] = _tree.subleadingJetPt
 
-    weight = np.array([_tree.weight])
-    if np.isnan(stack_feature).any():
-        stack_feature = np.copy(feature)
-        stack_weight = np.copy(weight)
-    else:
-        stack_feature = np.vstack((stack_feature, feature))
-        stack_weight = np.vstack((stack_weight, weight))
-
-outh5['Feature'] = stack_feature
-if 'T2qq' not in sample: 
-    stack_label = np.zeros(shape=(stack_feature.shape[0],1))
-else: 
-    stack_label = np.ones(shape=(stack_feature.shape[0],1))
-outh5['Label'] = stack_label
-outh5['Weight'] = stack_weight
-
-print "Save to {}".format(SAVEDIR+'/'+sample+'.h5')
-
-## Save to the inclusive file
-#if np.isnan(all_stack_feature).any():
-#    all_stack_feature = np.copy(stack_feature)
-#    all_stack_weight = np.copy(stack_weight)
-#    all_stack_label = np.copy(stack_label)
-#else:
-#    all_stack_feature = np.vstack((all_stack_feature, stack_feature))
-#    all_stack_weight = np.vstack((all_stack_weight, stack_weight))
-#    all_stack_label = np.vstack((all_stack_label, stack_label))
-#
-
-_file.Close()
-outh5.close()
-del stack_feature, outh5, _tree, feature, stack_weight, weight        
-
-#all_h5.create_dataset('Feature', data = all_stack_feature, compression='gzip')
-#all_h5.create_dataset('Weight', data = all_stack_weight, compression='gzip')
-#all_h5.create_dataset('Label', data = all_stack_label, dtype='int8')
-#all_h5.close()
-#print "Save to {}".format(SAVEDIR+'/SignalInclusive.h5')

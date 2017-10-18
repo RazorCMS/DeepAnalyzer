@@ -11,8 +11,8 @@ SAVEFILE = 'SignalRegionPlots.root'
 newfile = rt.TFile(SAVEFILE,"recreate")
 newfile.Close()
 
-SAVEDIR = '/eos/user/q/qnguyen/www/InclusiveFeature_Signal_MET100_MHT100/'
-CUT = 'leadingJetPt>100 && MET > 100 && MHT > 100 && (box==21 || box==22)'
+SAVEDIR = '/eos/user/q/qnguyen/www/InclusiveFeature_Signal_NoCut/'
+CUT = 'leadingJetPt>100 && (box==21 || box==22)'
 
 COLORS = {
         "WJets":rt.kRed+1, 
@@ -85,6 +85,7 @@ SAMPLES['T2qq_450_425']['test'] = filedir.replace("Signal/","SignalFastsim/")+"S
 SAMPLES['T2qq_900_100']['test'] = filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_900_100.root"
    
 print SAMPLES['WJets']['test']
+print SAMPLES['ZInv']['file']
 
 for sample in SAMPLES:
         _file = rt.TFile.Open(SAMPLES[sample]['file'])

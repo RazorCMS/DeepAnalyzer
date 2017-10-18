@@ -9,6 +9,7 @@ import os
 SAVEDIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/h5/'
 if not os.path.isdir(SAVEDIR): os.makedirs(SAVEDIR)
 
+CUT = 'leadingJetPt>100 && MET>100 && MHT>100 && (box==21 || box==22)'
 
 SAMPLES = {}
 filedir = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/Signal/'
@@ -52,34 +53,45 @@ for sample in SAMPLES:
     
     NEntries = _tree.GetEntries()
     print "Begin processing {} entries in {}".format(NEntries, sample)
-    for i in range(NEntries):
-        if (i % 10000 == 0): print "Processing event {}/{}".format(i, NEntries)
-        _tree.GetEntry(i)
-        feature = np.empty(shape=14, dtype=np.float32)
-        if (_tree.leadingJetPt > 100 and _tree.MET > 100 and _tree.MHT > 100 and (_tree.box == 21 or _tree.box == 22)):
-            # Features (in order): alphaT, dPhiMinJetMET, dPhiRazor, HT, jet1MT, leadingJetCISV, leadingJetPt, MET, MHT, MR, MT2, nSelectedJets, Rsq, subleadingJetPt
-            feature[0] = _tree.alphaT
-            feature[1] = _tree.dPhiMinJetMET
-            feature[2] = _tree.dPhiRazor
-            feature[3] = _tree.HT
-            feature[4] = _tree.jet1MT
-            feature[5] = _tree.leadingJetCISV
-            feature[6] = _tree.leadingJetPt
-            feature[7] = _tree.MET
-            feature[8] = _tree.MHT
-            feature[9] = _tree.MR
-            feature[10] = _tree.MT2
-            feature[11] = _tree.nSelectedJets
-            feature[12] = _tree.Rsq
-            feature[13] = _tree.subleadingJetPt
 
-            weight = np.array([_tree.weight])
-            if np.isnan(stack_feature).any():
-                stack_feature = np.copy(feature)
-                stack_weight = np.copy(weight)
-            else:
-                stack_feature = np.vstack((stack_feature, feature))
-                stack_weight = np.vstack((stack_weight, weight))
+    _tree.Draw('>>elist', CUT, 'entrylist')
+    elist = rt.gDirectory.Get('elist')
+    NPass = elist.GetN()
+    print "Total entries passing cuts: {}".format(NPass)
+
+    count = 0
+    while True:
+        entry = elist.Next()
+        if entry == -1: break
+        if count > 0 and count % 10000 == 0: print "Processing entry {}/{}".format(count, NPass)
+        _tree.GetEntry(entry)
+        count += 1
+
+        # Features (in order): alphaT, dPhiMinJetMET, dPhiRazor, HT, jet1MT, leadingJetCISV, leadingJetPt, MET, MHT, MR, MT2, nSelectedJets, Rsq, subleadingJetPt
+        feature = np.empty(shape=14, dtype=np.float32)
+        feature[0] = _tree.alphaT
+        feature[1] = _tree.dPhiMinJetMET
+        feature[2] = _tree.dPhiRazor
+        feature[3] = _tree.HT
+        feature[4] = _tree.jet1MT
+        feature[5] = _tree.leadingJetCISV
+        feature[6] = _tree.leadingJetPt
+        feature[7] = _tree.MET
+        feature[8] = _tree.MHT
+        feature[9] = _tree.MR
+        feature[10] = _tree.MT2
+        feature[11] = _tree.nSelectedJets
+        feature[12] = _tree.Rsq
+        feature[13] = _tree.subleadingJetPt
+
+        weight = np.array([_tree.weight])
+        if np.isnan(stack_feature).any():
+            stack_feature = np.copy(feature)
+            stack_weight = np.copy(weight)
+        else:
+            stack_feature = np.vstack((stack_feature, feature))
+            stack_weight = np.vstack((stack_weight, weight))
+    
     outh5['Feature'] = stack_feature
     if 'T2qq' not in sample: 
         stack_label = np.zeros(shape=(stack_feature.shape[0],1))

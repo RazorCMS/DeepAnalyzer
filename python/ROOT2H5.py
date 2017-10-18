@@ -34,12 +34,7 @@ SAMPLES['T2qq_900_850']['test'] = filedir.replace("Signal/","SignalFastsim/")+"S
 
 
 def convert(tree, sample=''):
-
-    if sample is not '': 
-        print "Transforming {} events from {}".format(tree.GetEntries(), sample)
-    else:
-        print "Processing {} events".format(tree.GetEntries())
-
+    print "Transforming {} events from {}".format(tree.GetEntries(), sample)
     feature = tree2array(tree,
             branches = ['weight','alphaT','dPhiMinJetMET','dPhiRazor','HT','jet1MT','leadingJetCISV','leadingJetPt','MET','MHT','MR','MT2','nSelectedJets','Rsq','subleadingJetPt'],
             selection = CUT)
@@ -50,6 +45,15 @@ def convert(tree, sample=''):
     data = nlr.merge_arrays([label,feature], flatten=True) 
     print "{} selected events converted to h5py".format(data.shape[0])
     return data
+
+def saveh5(sample,loca):
+    outh5 = h5py.File(SAVEDIR+'/'+sample+'.h5','w')
+    _file = rt.TFile.Open(SAMPLES[sample][loca])
+    _tree = _file.Get('InclusiveSignalRegion')
+    outh5['Data'] = convert(_tree, sample)
+    outh5.close()
+    _file.Close()
+    print "Save to {}".format(SAVEDIR+'/'+sample+'.h5')
 
 parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group(required=True)
@@ -65,34 +69,10 @@ if args.test:
 else:
     loca = 'file'
 
-if args.all: # Save all into 1 files
+if args.all: # 
     print "Processing all files..."
-    all_h5 = h5py.File(SAVEDIR+'/Inclusive.h5','w')
-    chain = rt.TChain("InclusiveSignalRegion")
-    signal_chain = rt.TChain("InclusiveSignalRegion")
     for sample in SAMPLES:
-        if 'T2qq' in sample: 
-            signal_chain.AddFile(SAMPLES[sample][loca])
-        else:
-            chain.AddFile(SAMPLES[sample][loca])
-    background = convert(chain)
-    signal = convert(signal_chain,'T2qq_900_850')
-    all_data = np.hstack((background,signal))
-    all_h5['Data'] = all_data
-    all_h5.close()
-    print "Save to {}".format(SAVEDIR+'/Inclusive.h5')
-
-else:
-    sample = args.sample
-    outh5 = h5py.File(SAVEDIR+'/'+sample+'.h5','w')
-
-    _file = rt.TFile.Open(SAMPLES[sample][loca])
-    _tree = _file.Get('InclusiveSignalRegion')
-
-    outh5['Data'] = convert(_tree, sample)
-
-    print "Save to {}".format(SAVEDIR+'/'+sample+'.h5')
-    outh5.close()
-    _file.Close()
-
+        saveh5(sample, loca)
+else: 
+    saveh5(args.sample, loca)
 

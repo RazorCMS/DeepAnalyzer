@@ -11,7 +11,6 @@ import pickle
 def to_regular_array(struct_array):
     return struct_array.view((np.float32, len(struct_array.dtype.names)))
 
-
 def clean_dataset(arr):
     print "Before cleaning: {}".format(arr.shape)
     df = pd.DataFrame(data=arr)
@@ -21,6 +20,15 @@ def clean_dataset(arr):
     print "After cleaning: {}".format(cleaned.shape)
     return cleaned
 
+def multiply_data(data, multiplicity):
+    print "Dataset size before multiplicity: {}".format(data.shape[0])
+    for i in range(multiplicity):
+        if i==0: sum_data = np.copy(data)
+        else: sum_data = np.hstack((sum_data, data))
+    # Reduce the weight of the sum:
+    sum_data['weight'] /= multiplicity
+    print "Dataset size after multiplicity: {}".format(sum_data.shape[0])
+    return sum_data
 
 BACKGROUND = ['DYJets','Other','QCD','SingleTop','TTJets','WJets','ZInv']
 SIGNAL = ['T2qq_900_850']
@@ -33,6 +41,10 @@ for i,bkg in enumerate(BACKGROUND):
     else: Background = np.hstack((Background, _file['Data']))
 Signal = h5py.File(DATA_DIR+SIGNAL[0]+'.h5','r')['Data']
 
+Signal = multiply_data(Signal, 3000) # Increase the size of signal to match background
+
+
+plt.ioff() # turn off interactive mode
 n_bkg, bins, _ = plt.hist(x = Background['leadingJetPt'], range=(0,10000), bins=200, weights = Background['weight'])
 n_sn, _, _ = plt.hist(x = Signal['leadingJetPt'], range=(0,10000), bins=200, weights = Signal['weight'])
 

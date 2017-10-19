@@ -48,22 +48,18 @@ Dataset = np.hstack((Background, Signal))
 np.random.shuffle(Dataset)
 del Background, Signal # free up memory (not sure it helps)
 
-x = Dataset[['alphaT','dPhiMinJetMET','dPhiRazor','HT','jet1MT','leadingJetCISV','leadingJetPt','MET','MHT','MR','MT2','nSelectedJets','Rsq','subleadingJetPt']]
-y = Dataset[['label']]
-sample_weight = Dataset[['weight']]
+Dataset = to_regular_array(Dataset)
+Dataset = clean_dataset(Dataset)
 
-x = to_regular_array(x)
-y = to_regular_array(y)
-sample_weight = to_regular_array(sample_weight)
+x = Dataset[:,2:]
+y = Dataset[:,0]
+sample_weight = Dataset[:,1]
 
-# Remove NaN and Inf
-x = clean_dataset(x)
-
+# 60% training, 20% validation, 20% testing
 data_size = x.shape[0]
 training_index = int(0.6*data_size)
 val_index = training_index + int(0.2*data_size)
 
-# 60% training, 20% validation, 20% testing
 x_train = x[:training_index]
 y_train = y[:training_index]
 sample_weight_train = sample_weight[:training_index]

@@ -82,7 +82,7 @@ model.summary()
 hist = model.fit(x_train, y_train,
         validation_data = (x_val, y_val),
         nb_epoch = 10,
-        batch_size = 32,
+        batch_size = 128,
         shuffle = True,
         class_weight = class_weight,
         sample_weight = sample_weight_train,

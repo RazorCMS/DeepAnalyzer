@@ -1,13 +1,25 @@
 import h5py
+import pandas as pd 
 from keras.models import Model
 from keras.layers import Input, Dense
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
+import pickle 
 
 # Convert to regular numpy arrays
 def to_regular_array(struct_array):
-    return struct_array.view((struct_array.dtype[0], len(struct_array.dtype.names)))
+    return struct_array.view((np.float32, len(struct_array.dtype.names)))
+
+
+def clean_dataset(arr):
+    print "Before cleaning: {}".format(arr.shape)
+    df = pd.DataFrame(data=arr)
+    df.dropna(inplace=True)
+    indices_to_keep = ~df.isin([np.nan, np.inf, -np.inf]).any(1)
+    cleaned = pd.DataFrame.as_matrix(df[indices_to_keep].astype(np.float32))
+    print "After cleaning: {}".format(cleaned.shape)
+    return cleaned
 
 
 BACKGROUND = ['DYJets','Other','QCD','SingleTop','TTJets','WJets','ZInv']
@@ -29,7 +41,7 @@ bkg_integral = bin_width * sum(n_bkg[:])
 sn_integral = bin_width * sum(n_sn[:])
 print "Background integral = {}, signal integral = {}".format(bkg_integral,sn_integral)
 
-class_weight = { 0: 1., 1: bkg_integral/sn_integral}
+class_weight = { 0: sn_integral/bkg_integral, 1: 1.}
 
 # Get shuffled unified dataset for training
 Dataset = np.hstack((Background, Signal))
@@ -44,10 +56,8 @@ x = to_regular_array(x)
 y = to_regular_array(y)
 sample_weight = to_regular_array(sample_weight)
 
-print x.shape
-print y.shape
-print sample_weight.shape
-
+# Remove NaN and Inf
+x = clean_dataset(x)
 
 data_size = x.shape[0]
 training_index = int(0.6*data_size)
@@ -66,6 +76,15 @@ x_test = x[val_index:]
 y_test = y[val_index:]
 sample_weight_test = sample_weight[val_index:]
 
+# Normalize dataset
+scaler = preprocessing.StandardScaler().fit(x_train)
+x_train = scaler.transform(x_train)
+x_val = scaler.transform(x_val)
+
+# Save scaler to file
+scalerfile = 'scaler.sav'
+pickle.dump(scaler, open(scalerfile, 'wb'))
+
 # Training with a simple FFNN
 i = Input(shape=(14,))
 layer = Dense(100, activation = 'relu')(i)
@@ -76,7 +95,7 @@ layer = Dense(10, activation = 'relu')(layer)
 o = Dense(1, activation = 'sigmoid')(layer)
 
 model = Model(i,o)
-model.compile(optimizer = 'adam', loss = 'binary_crossentropy')
+model.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics=['accuracy'])
 model.summary()
 
 hist = model.fit(x_train, y_train,
@@ -88,3 +107,5 @@ hist = model.fit(x_train, y_train,
         sample_weight = sample_weight_train,
         )
 
+histfile = 'history.sav'
+pickle.dump(hist.history, open(histfile,'wb'))

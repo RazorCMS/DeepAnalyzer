@@ -39,9 +39,9 @@ def convert(tree, sample=''):
             branches = ['weight','alphaT','dPhiMinJetMET','dPhiRazor','HT','jet1MT','leadingJetCISV','leadingJetPt','MET','MHT','MR','MT2','nSelectedJets','Rsq','subleadingJetPt'],
             selection = CUT)
     if 'T2qq' in sample:
-        label = np.ones(shape=(feature.shape), dtype = [('label','i4')])
+        label = np.ones(shape=(feature.shape), dtype = [('label','f4')])
     else:
-        label = np.zeros(shape=(feature.shape), dtype = [('label','i4')])
+        label = np.zeros(shape=(feature.shape), dtype = [('label','f4')])
     data = nlr.merge_arrays([label,feature], flatten=True) 
     print "{} selected events converted to h5py".format(data.shape[0])
     return data

@@ -2,6 +2,7 @@ import h5py
 import pandas as pd 
 from keras.models import Model
 from keras.layers import Input, Dense
+from keras.callbacks import ModelCheckpoint
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
@@ -26,7 +27,7 @@ def multiply_data(data, multiplicity):
         if i==0: sum_data = np.copy(data)
         else: sum_data = np.hstack((sum_data, data))
     # Reduce the weight of the sum:
-    sum_data['weight'] /= multiplicity
+    # sum_data['weight'] /= multiplicity
     print "Dataset size after multiplicity: {}".format(sum_data.shape[0])
     return sum_data
 
@@ -41,19 +42,24 @@ for i,bkg in enumerate(BACKGROUND):
     else: Background = np.hstack((Background, _file['Data']))
 Signal = h5py.File(DATA_DIR+SIGNAL[0]+'.h5','r')['Data']
 
-Signal = multiply_data(Signal, 3000) # Increase the size of signal to match background
+#Signal = multiply_data(Signal, 3000) # Increase the size of signal to match background
+#_h5signal = h5py.File("/bigdata/shared/analysis/T2qq_900_850_multiplicity","w")
+#_h5signal['Data'] = Signal
+#_h5signal.close()
+#print "Write to /bigdata/shared/analysis/T2qq_900_850_multiplicity"
+#asdfasdgasrh
 
+#plt.ioff() # turn off interactive mode
+#n_bkg, bins, _ = plt.hist(x = Background['leadingJetPt'], range=(0,10000), bins=200, weights = Background['weight'])
+#n_sn, _, _ = plt.hist(x = Signal['leadingJetPt'], range=(0,10000), bins=200, weights = Signal['weight'])
+#
+#bin_width = bins[1] - bins[0]
+#bkg_integral = bin_width * sum(n_bkg[:])
+#sn_integral = bin_width * sum(n_sn[:])
+#print "Background integral = {}, signal integral = {}".format(bkg_integral,sn_integral)
 
-plt.ioff() # turn off interactive mode
-n_bkg, bins, _ = plt.hist(x = Background['leadingJetPt'], range=(0,10000), bins=200, weights = Background['weight'])
-n_sn, _, _ = plt.hist(x = Signal['leadingJetPt'], range=(0,10000), bins=200, weights = Signal['weight'])
-
-bin_width = bins[1] - bins[0]
-bkg_integral = bin_width * sum(n_bkg[:])
-sn_integral = bin_width * sum(n_sn[:])
-print "Background integral = {}, signal integral = {}".format(bkg_integral,sn_integral)
-
-class_weight = { 0: sn_integral/bkg_integral, 1: 1.}
+class_weight = { 0: 1, 1: Background.shape[0]/Signal.shape[0]}
+print "Class weight: {}".format(class_weight)
 
 # Get shuffled unified dataset for training
 Dataset = np.hstack((Background, Signal))
@@ -84,6 +90,14 @@ x_test = x[val_index:]
 y_test = y[val_index:]
 sample_weight_test = sample_weight[val_index:]
 
+# Save to files
+combine = h5py.File(DATA_DIR+"/CombinedDataset.h5","w")
+combine['Training'] = Dataset[:training_index]
+combine['Validation'] = Dataset[training_index:val_index]
+combine['Test'] = Dataset[val_index:]
+print "Save divided datasets to {}/CombinedDataset.h5".format(DATA_DIR)
+combine.close()
+
 # Normalize dataset
 scaler = preprocessing.StandardScaler().fit(x_train)
 x_train = scaler.transform(x_train)
@@ -103,16 +117,17 @@ layer = Dense(10, activation = 'relu')(layer)
 o = Dense(1, activation = 'sigmoid')(layer)
 
 model = Model(i,o)
-model.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics=['accuracy'])
+model.compile(optimizer = 'adam', loss = 'binary_crossentropy', weighted_metrics=['accuracy'])
 model.summary()
 
 hist = model.fit(x_train, y_train,
-        validation_data = (x_val, y_val),
+        validation_data = (x_val, y_val, sample_weight_val),
         nb_epoch = 10,
         batch_size = 128,
-        shuffle = True,
+        shuffle = False,
         class_weight = class_weight,
         sample_weight = sample_weight_train,
+        callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1)],
         )
 
 histfile = 'history.sav'

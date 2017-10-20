@@ -1,90 +1,160 @@
 import h5py
-from keras.models import Model
-from keras.layers import Input, Dense
+import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
+from sklearn.externals import joblib
+import pickle 
+import argparse
+
+DATA_DIR = '/bigdata/shared/analysis/'
+SCALER = 'scaler.pkl'
 
 # Convert to regular numpy arrays
 def to_regular_array(struct_array):
-    return struct_array.view((struct_array.dtype[0], len(struct_array.dtype.names)))
+    return struct_array.view((np.float32, len(struct_array.dtype.names)))
+
+def clean_dataset(arr):
+    print "Before cleaning: {}".format(arr.shape)
+    df = pd.DataFrame(data=arr)
+    df.dropna(inplace=True)
+    indices_to_keep = ~df.isin([np.nan, np.inf, -np.inf]).any(1)
+    cleaned = pd.DataFrame.as_matrix(df[indices_to_keep].astype(np.float32))
+    print "After cleaning: {}".format(cleaned.shape)
+    return cleaned
+
+def multiply_data(data, multiplicity):
+    print "Dataset size before multiplicity: {}".format(data.shape[0])
+    for i in range(multiplicity):
+        if i==0: sum_data = np.copy(data)
+        else: sum_data = np.hstack((sum_data, data))
+    # Reduce the weight of the sum:
+    # sum_data['weight'] /= multiplicity
+    print "Dataset size after multiplicity: {}".format(sum_data.shape[0])
+    return sum_data
+
+def create_dataset():
+    BACKGROUND = ['DYJets','Other','QCD','SingleTop','TTJets','WJets','ZInv']
+    SIGNAL = ['T2qq_900_850']
+    print "Creating dataset..."
+    for i,bkg in enumerate(BACKGROUND):
+        _file = h5py.File(DATA_DIR+'/'+bkg+'.h5','r')
+        if i == 0: Background = np.copy(_file['Data'])
+        else: Background = np.hstack((Background, _file['Data']))
+    Signal = h5py.File(DATA_DIR+SIGNAL[0]+'.h5','r')['Data'][:]
+
+    print "Background size: {}".format(Background.shape[0]) 
+    print "Signal size: {}".format(Signal.shape[0])
+
+    # Get shuffled unified dataset for training
+    #Dataset = np.hstack((Background, Signal))
+    #np.random.shuffle(Dataset)
+
+    print "Signal: "
+    print Signal
+    print Signal['label']
+    _test = to_regular_array(Signal)
+    print _test[0]
+    
+    # 60% training, 20% validation, 20% testing
+    data_size = Dataset.shape[0]
+    training_index = int(0.6*data_size)
+    val_index = training_index + int(0.2*data_size)
+
+    Dataset = to_regular_array(Dataset)
+    Dataset = clean_dataset(Dataset)
+    
+    unique, counts = np.unique(Dataset[:,0], return_counts=True)
+    occur = dict(zip(unique, counts)) # this hopefully returns {0: bkg, 1: sn}
+    print "Original label counts: {}".format(occur)
 
 
-BACKGROUND = ['DYJets','Other','QCD','SingleTop','TTJets','WJets','ZInv']
-SIGNAL = ['T2qq_900_850']
-DATA_DIR = '/bigdata/shared/analysis/'
+    # Save to files
+    combine = h5py.File(DATA_DIR+"/CombinedDataset.h5","w")
+    combine['Training'] = Dataset[:training_index]
+    combine['Validation'] = Dataset[training_index:val_index]
+    combine['Test'] = Dataset[val_index:]
+    print "Save divided datasets to {}/CombinedDataset.h5".format(DATA_DIR)
+    combine.close()
 
-# Compute class weights
-for i,bkg in enumerate(BACKGROUND):
-    _file = h5py.File(DATA_DIR+'/'+bkg+'.h5','r')
-    if i == 0: Background = np.copy(_file['Data'])
-    else: Background = np.hstack((Background, _file['Data']))
-Signal = h5py.File(DATA_DIR+SIGNAL[0]+'.h5','r')['Data']
+def load_dataset(location, load_type = 0):
+    loadfile = h5py.File(location,"r")
 
-n_bkg, bins, _ = plt.hist(x = Background['leadingJetPt'], range=(0,10000), bins=200, weights = Background['weight'])
-n_sn, _, _ = plt.hist(x = Signal['leadingJetPt'], range=(0,10000), bins=200, weights = Signal['weight'])
+    def decode(load_type):
+        if load_type == 0: return "Training"
+        elif load_type == 1: return "Validation"
+        else: return "Test"
 
-bin_width = bins[1] - bins[0]
-bkg_integral = bin_width * sum(n_bkg[:])
-sn_integral = bin_width * sum(n_sn[:])
-print "Background integral = {}, signal integral = {}".format(bkg_integral,sn_integral)
+    dat = loadfile[decode(load_type)]
+    _x = dat[:,2:]
+    _y = dat[:,0].astype(int)
+    _weight = dat[:,1]
+    return _x, _y, _weight
 
-class_weight = { 0: 1., 1: bkg_integral/sn_integral}
+def get_class_weight(label):
+    unique, counts = np.unique(label, return_counts=True)
+    occur = dict(zip(unique, counts)) # this hopefully returns {0: bkg, 1: sn}
+    print "occur: {}".format(occur)
+    class_weight = {occur.keys()[0]: 1, occur.keys()[1]: occur[occur.keys()[0]]/occur[occur.keys()[1]]}
+    print "class_weight: {}".format(class_weight)
+    return class_weight
 
-# Get shuffled unified dataset for training
-Dataset = np.hstack((Background, Signal))
-np.random.shuffle(Dataset)
-del Background, Signal # free up memory (not sure it helps)
+def scale_fit(x_train):
+    scaler = preprocessing.StandardScaler().fit(x_train)
+    joblib.dump(scaler, SCALER)
+    print "Saving scaler information to {}".format(SCALER)
 
-x = Dataset[['alphaT','dPhiMinJetMET','dPhiRazor','HT','jet1MT','leadingJetCISV','leadingJetPt','MET','MHT','MR','MT2','nSelectedJets','Rsq','subleadingJetPt']]
-y = Dataset[['label']]
-sample_weight = Dataset[['weight']]
+def scale_dataset(x_train):
+    scaler = joblib.load(SCALER)
+    x_train = scaler.transform(x_train)
+    return x_train
 
-x = to_regular_array(x)
-y = to_regular_array(y)
-sample_weight = to_regular_array(sample_weight)
+def create_model():
+    from keras.models import Model
+    from keras.layers import Input, Dense
+    
+    # Training with a simple FFNN
+    i = Input(shape=(14,))
+    layer = Dense(100, activation = 'relu')(i)
+    layer = Dense(100, activation = 'relu')(layer)
+    layer = Dense(100, activation = 'relu')(layer)
+    layer = Dense(100, activation = 'relu')(layer)
+    layer = Dense(10, activation = 'relu')(layer)
+    o = Dense(1, activation = 'sigmoid')(layer)
 
-print x.shape
-print y.shape
-print sample_weight.shape
+    model = Model(i,o)
+    model.summary()
+    return model
 
+def training():
+    print "Loading data..."
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset.h5",0)
+    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset.h5",1)
 
-data_size = x.shape[0]
-training_index = int(0.6*data_size)
-val_index = training_index + int(0.2*data_size)
+    print "Scaling features..."
+    scale_fit(x_train)
+    scale_dataset(x_train)
+    scale_dataset(x_val)
+    
+    class_weight = get_class_weight(y_train)
 
-# 60% training, 20% validation, 20% testing
-x_train = x[:training_index]
-y_train = y[:training_index]
-sample_weight_train = sample_weight[:training_index]
+    model = create_model()
+    model.compile(optimizer = 'adam', loss = 'binary_crossentropy', weighted_metrics=['accuracy'])
+    
+    from keras.callbacks import ModelCheckpoint
+    hist = model.fit(x_train, y_train,
+            validation_data = (x_val, y_val, sample_weight_val),
+            nb_epoch = 10,
+            batch_size = 128,
+            shuffle = False,
+            class_weight = class_weight,
+            sample_weight = sample_weight_train,
+            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1)],
+            )
 
-x_val = x[training_index:val_index]
-y_val = y[training_index:val_index]
-sample_weight_val = sample_weight[training_index:val_index]
+    histfile = 'history.sav'
+    pickle.dump(hist.history, open(histfile,'wb'))
 
-x_test = x[val_index:]
-y_test = y[val_index:]
-sample_weight_test = sample_weight[val_index:]
-
-# Training with a simple FFNN
-i = Input(shape=(14,))
-layer = Dense(100, activation = 'relu')(i)
-layer = Dense(100, activation = 'relu')(layer)
-layer = Dense(100, activation = 'relu')(layer)
-layer = Dense(100, activation = 'relu')(layer)
-layer = Dense(10, activation = 'relu')(layer)
-o = Dense(1, activation = 'sigmoid')(layer)
-
-model = Model(i,o)
-model.compile(optimizer = 'adam', loss = 'binary_crossentropy')
-model.summary()
-
-hist = model.fit(x_train, y_train,
-        validation_data = (x_val, y_val),
-        nb_epoch = 10,
-        batch_size = 128,
-        shuffle = True,
-        class_weight = class_weight,
-        sample_weight = sample_weight_train,
-        )
+create_dataset()
+training()
 

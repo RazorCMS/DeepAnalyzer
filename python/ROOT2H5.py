@@ -20,7 +20,7 @@ SAMPLES['QCD'] = {'file': filedir+"InclusiveSignalRegion_Razor2016_MoriondRereco
 SAMPLES['DYJets'] = {'file': filedir+"InclusiveSignalRegion_Razor2016_MoriondRereco_DYJets_1pb_weighted.root"}
 SAMPLES['SingleTop'] = {'file': filedir+"InclusiveSignalRegion_Razor2016_MoriondRereco_SingleTop_1pb_weighted.root"}
 SAMPLES['ZInv'] = {'file': filedir+"InclusiveSignalRegion_Razor2016_MoriondRereco_ZInv_1pb_weighted.root"}
-SAMPLES['T2qq_900_850'] = {'file': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_900_850.root"}
+SAMPLES['T2qq_900_850'] = {'file': filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_900_850_1pb_weighted.root"}
 
 # Test files for quick and dirty check
 SAMPLES['WJets']['test'] = filedir+'jobs/InclusiveSignalRegion_Razor2016_MoriondRereco_WJetsToLNu_Pt-250To400_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8.Job0of13.root'
@@ -30,8 +30,7 @@ SAMPLES['QCD']['test'] = filedir+'jobs/InclusiveSignalRegion_Razor2016_MoriondRe
 SAMPLES['DYJets']['test'] = filedir+'jobs/InclusiveSignalRegion_Razor2016_MoriondRereco_DYJetsToLL_M-50_HT-200to400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.Job24of251.root'
 SAMPLES['SingleTop']['test'] = filedir+'jobs/InclusiveSignalRegion_Razor2016_MoriondRereco_ST_t-channel_antitop_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1.Job121of678.root'
 SAMPLES['ZInv']['test'] = filedir+"/jobs/InclusiveSignalRegion_Razor2016_MoriondRereco_ZJetsToNuNu_HT-200To400_13TeV-madgraph.Job201of512.root"
-SAMPLES['T2qq_900_850']['test'] = filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_900_850.root"
-
+SAMPLES['T2qq_900_850']['test'] = filedir.replace("Signal/","SignalFastsim/")+"SMS-T2qq_900_850_1pb_weighted.root"
 
 def convert(tree, sample=''):
     print "Transforming {} events from {}".format(tree.GetEntries(), sample)
@@ -39,14 +38,15 @@ def convert(tree, sample=''):
             branches = ['weight','alphaT','dPhiMinJetMET','dPhiRazor','HT','jet1MT','leadingJetCISV','leadingJetPt','MET','MHT','MR','MT2','nSelectedJets','Rsq','subleadingJetPt'],
             selection = CUT)
     if 'T2qq' in sample:
-        label = np.ones(shape=(feature.shape), dtype = [('label','i4')])
+        label = np.ones(shape=(feature.shape), dtype = [('label','f4')])
     else:
-        label = np.zeros(shape=(feature.shape), dtype = [('label','i4')])
+        label = np.zeros(shape=(feature.shape), dtype = [('label','f4')])
     data = nlr.merge_arrays([label,feature], flatten=True) 
     print "{} selected events converted to h5py".format(data.shape[0])
     return data
 
 def saveh5(sample,loca):
+    print SAVEDIR+'/'+sample+'.h5'
     outh5 = h5py.File(SAVEDIR+'/'+sample+'.h5','w')
     _file = rt.TFile.Open(SAMPLES[sample][loca])
     _tree = _file.Get('InclusiveSignalRegion')

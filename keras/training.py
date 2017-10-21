@@ -47,15 +47,9 @@ def create_dataset():
     print "Signal size: {}".format(Signal.shape[0])
 
     # Get shuffled unified dataset for training
-    #Dataset = np.hstack((Background, Signal))
-    #np.random.shuffle(Dataset)
+    Dataset = np.hstack((Background, Signal))
+    np.random.shuffle(Dataset)
 
-    print "Signal: "
-    print Signal
-    print Signal['label']
-    _test = to_regular_array(Signal)
-    print _test[0]
-    
     # 60% training, 20% validation, 20% testing
     data_size = Dataset.shape[0]
     training_index = int(0.6*data_size)
@@ -139,21 +133,36 @@ def training():
     class_weight = get_class_weight(y_train)
 
     model = create_model()
-    model.compile(optimizer = 'adam', loss = 'binary_crossentropy', weighted_metrics=['accuracy'])
+    model.compile(optimizer = 'adam', loss = 'binary_crossentropy', weighted_metrics=['accuracy'], metrics=['accuracy'])
     
     from keras.callbacks import ModelCheckpoint
     hist = model.fit(x_train, y_train,
-            validation_data = (x_val, y_val, sample_weight_val),
+            validation_data = (x_val, y_val, weight_val),
             nb_epoch = 10,
             batch_size = 128,
-            shuffle = False,
             class_weight = class_weight,
-            sample_weight = sample_weight_train,
+            sample_weight = weight_train,
             callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1)],
             )
 
     histfile = 'history.sav'
     pickle.dump(hist.history, open(histfile,'wb'))
+
+def testing():
+    print "Loading the model checkpoint..."
+    from keras.models import load_model
+    model = load_model('CheckPoint.h5')
+    x_test, y_test, weight_test = load_dataset(DATA_DIR+"/CombinedDataset.h5",2)
+    x_bkg = x_test[np.where(y < 1)]
+    x_sn = x_test[np.where(y>0)]
+
+    bkg_pred = model.predict(x_bkg)
+    sn_pred = model.predict(x_sn)
+
+    test_result = h5py.File("TestResult.h5")
+    test_result['Signal'] = sn_pred
+    test_result['Background'] = bkg_pred
+    test_result.close()
 
 create_dataset()
 training()

@@ -114,7 +114,8 @@ def create_model():
     layer = Dense(100, activation = 'relu')(layer)
     layer = Dense(100, activation = 'relu')(layer)
     layer = Dense(10, activation = 'relu')(layer)
-    o = Dense(1, activation = 'sigmoid')(layer)
+    #o = Dense(1, activation = 'sigmoid')(layer)
+    o = Dense(1)(layer)
 
     model = Model(i,o)
     model.summary()
@@ -133,7 +134,8 @@ def training():
     class_weight = get_class_weight(y_train)
 
     model = create_model()
-    model.compile(optimizer = 'adam', loss = 'binary_crossentropy', weighted_metrics=['accuracy'], metrics=['accuracy'])
+    #model.compile(optimizer = 'adam', loss = 'binary_crossentropy', weighted_metrics=['accuracy'], metrics=['accuracy'])
+    model.compile(optimizer = 'adam', loss = 'mean_squared_error')
     
     from keras.callbacks import ModelCheckpoint
     hist = model.fit(x_train, y_train,
@@ -150,12 +152,15 @@ def training():
 
 def testing():
     print "Loading the model checkpoint..."
+    x_test, y_test, weight_test = load_dataset(DATA_DIR+"/CombinedDataset.h5",2)
+    scale_dataset(x_test)
+    x_bkg = x_test[np.where(y_test < 1)]
+    print "Background size: {}".format(x_bkg.shape[0])
+    x_sn = x_test[np.where(y_test > 0)]
+    print "Signal size: {}".format(x_sn.shape[0])
+
     from keras.models import load_model
     model = load_model('CheckPoint.h5')
-    x_test, y_test, weight_test = load_dataset(DATA_DIR+"/CombinedDataset.h5",2)
-    x_bkg = x_test[np.where(y < 1)]
-    x_sn = x_test[np.where(y>0)]
-
     bkg_pred = model.predict(x_bkg)
     sn_pred = model.predict(x_sn)
 
@@ -164,6 +169,8 @@ def testing():
     test_result['Background'] = bkg_pred
     test_result.close()
 
-create_dataset()
-training()
+if __name__ == "__main__":
+#    create_dataset()
+    training()
+#    testing()
 

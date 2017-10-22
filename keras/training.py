@@ -83,7 +83,7 @@ def load_dataset(location, load_type = 0):
 
     dat = loadfile[decode(load_type)]
     _x = dat[:,2:]
-    _y = dat[:,0].astype(int)
+    _y = dat[:,0]
     _weight = dat[:,1]*1e6
     return _x, _y, _weight
 
@@ -128,7 +128,7 @@ def training():
     x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1)
 
     print "Scaling features..."
-    scale_fit(x_train)
+    #scale_fit(x_train)
     scale_dataset(x_train)
     scale_dataset(x_val)
     
@@ -137,16 +137,16 @@ def training():
     model = create_model()
     from keras import optimizers
     #model.compile(optimizer = 'adam', loss = 'binary_crossentropy', weighted_metrics=['accuracy'], metrics=['accuracy'])
-    model.compile(optimizer = optimizers.Adam(lr = 0.01), loss = 'mean_squared_error')
+    model.compile(optimizer = optimizers.Adam(lr = 1e-4), loss = 'mean_squared_error')
     
-    from keras.callbacks import ModelCheckpoint
+    from keras.callbacks import ModelCheckpoint,EarlyStopping
     hist = model.fit(x_train, y_train,
             validation_data = (x_val, y_val, weight_val),
             nb_epoch = 10,
             batch_size = 128,
     #        class_weight = class_weight,
             sample_weight = weight_train,
-            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1)],
+            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1), EarlyStopping()],
             )
 
     bkg_pred = model.predict(x_val[np.where(y_val < 1)])

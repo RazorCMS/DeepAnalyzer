@@ -111,12 +111,11 @@ def create_model():
     
     # Training with a simple FFNN
     i = Input(shape=(14,))
-    layer = Dense(100, activation = 'relu')(i)
+    layer = Dense(1000, activation = 'relu')(i)
     layer = Dense(100, activation = 'relu')(layer)
     layer = Dense(100, activation = 'relu')(layer)
-    layer = Dense(10, activation = 'relu')(layer)
-    #o = Dense(1, activation = 'sigmoid')(layer)
-    o = Dense(1)(layer)
+    o = Dense(1, activation = 'sigmoid')(layer)
+    #o = Dense(1)(layer)
 
     model = Model(i,o)
     model.summary()
@@ -136,21 +135,21 @@ def training():
 
     model = create_model()
     from keras import optimizers
-    #model.compile(optimizer = 'adam', loss = 'binary_crossentropy', weighted_metrics=['accuracy'], metrics=['accuracy'])
-    model.compile(optimizer = optimizers.Adam(lr = 1e-4), loss = 'mean_squared_error')
+    model.compile(optimizer = 'adam', loss = 'binary_crossentropy', weighted_metrics=['accuracy'], metrics=['accuracy'])
+    #model.compile(optimizer = optimizers.Adam(lr = 1e-3), loss = 'mean_squared_error')
     
-    from keras.callbacks import ModelCheckpoint,EarlyStopping
+    from keras.callbacks import ModelCheckpoint,EarlyStopping,ReduceLROnPlateau
     hist = model.fit(x_train, y_train,
             validation_data = (x_val, y_val, weight_val),
-            nb_epoch = 10,
+            nb_epoch = 50,
             batch_size = 128,
     #        class_weight = class_weight,
             sample_weight = weight_train,
-            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1), EarlyStopping()],
+            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1), ReduceLROnPlateau(factor=0.5, patience=0, min_lr=1e-6, verbose = 1), EarlyStopping(patience = 3)],
             )
 
-    bkg_pred = model.predict(x_val[np.where(y_val < 1)])
-    sn_pred = model.predict(x_val[np.where(y_val > 0)])
+    bkg_pred = model.predict(x_val[np.where(y_val < 0.5)])
+    sn_pred = model.predict(x_val[np.where(y_val > 0.5)])
 
     val_result = h5py.File("ValidationResult.h5",'w')
     val_result['Signal'] = sn_pred
@@ -164,11 +163,16 @@ def training():
 def testing():
     print "Loading the model checkpoint..."
     x_test, y_test, weight_test = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",2)
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",2)
+    scale_dataset(x_train)
     scale_dataset(x_test)
-    x_bkg = x_test[np.where(y_test < 1)]
+    x_bkg = x_test[np.where(y_test < 0.5)]
     print "Background size: {}".format(x_bkg.shape[0])
-    x_sn = x_test[np.where(y_test > 0)]
+    x_sn = x_test[np.where(y_test > 0.5)]
     print "Signal size: {}".format(x_sn.shape[0])
+
+    bkg_train = x_train[np.where(y_train < 0.5)]
+    sn_train = x_train[np.where(y_train > 0.5)]
 
     from keras.models import load_model
 
@@ -176,11 +180,20 @@ def testing():
     bkg_pred = model.predict(x_bkg)
     sn_pred = model.predict(x_sn)
 
+    bkg_train_pred = model.predict(bkg_train)
+    sn_train_pred = model.predict(sn_train)
+
     test_result = h5py.File("TestResult.h5",'w')
     test_result['Signal'] = sn_pred
     test_result['Background'] = bkg_pred
     print "Save result to TestResult.h5"
     test_result.close()
+
+    train_result = h5py.File("TrainResult.h5",'w')
+    train_result['Signal'] = sn_train_pred
+    train_result['Background'] = bkg_train_pred
+    print "Save result to TrainResult.h5"
+    train_result.close()
 
 if __name__ == "__main__":
 #    create_dataset()

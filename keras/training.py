@@ -46,6 +46,8 @@ def create_dataset():
     print "Background size: {}".format(Background.shape[0]) 
     print "Signal size: {}".format(Signal.shape[0])
 
+    Signal = multiply_data(Signal, 3483)
+
     # Get shuffled unified dataset for training
     Dataset = np.hstack((Background, Signal))
     np.random.shuffle(Dataset)
@@ -64,11 +66,11 @@ def create_dataset():
 
 
     # Save to files
-    combine = h5py.File(DATA_DIR+"/CombinedDataset.h5","w")
+    combine = h5py.File(DATA_DIR+"/CombinedDataset_Balanced.h5","w")
     combine['Training'] = Dataset[:training_index]
     combine['Validation'] = Dataset[training_index:val_index]
     combine['Test'] = Dataset[val_index:]
-    print "Save divided datasets to {}/CombinedDataset.h5".format(DATA_DIR)
+    print "Save divided datasets to {}/CombinedDataset_Balanced.h5".format(DATA_DIR)
     combine.close()
 
 def load_dataset(location, load_type = 0):
@@ -82,7 +84,7 @@ def load_dataset(location, load_type = 0):
     dat = loadfile[decode(load_type)]
     _x = dat[:,2:]
     _y = dat[:,0].astype(int)
-    _weight = dat[:,1]
+    _weight = dat[:,1]*1e6
     return _x, _y, _weight
 
 def get_class_weight(label):
@@ -94,7 +96,7 @@ def get_class_weight(label):
     return class_weight
 
 def scale_fit(x_train):
-    scaler = preprocessing.StandardScaler().fit(x_train)
+    scaler = preprocessing.RobustScaler().fit(x_train)
     joblib.dump(scaler, SCALER)
     print "Saving scaler information to {}".format(SCALER)
 
@@ -112,7 +114,6 @@ def create_model():
     layer = Dense(100, activation = 'relu')(i)
     layer = Dense(100, activation = 'relu')(layer)
     layer = Dense(100, activation = 'relu')(layer)
-    layer = Dense(100, activation = 'relu')(layer)
     layer = Dense(10, activation = 'relu')(layer)
     #o = Dense(1, activation = 'sigmoid')(layer)
     o = Dense(1)(layer)
@@ -123,8 +124,8 @@ def create_model():
 
 def training():
     print "Loading data..."
-    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset.h5",0)
-    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset.h5",1)
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0)
+    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1)
 
     print "Scaling features..."
     scale_fit(x_train)
@@ -134,25 +135,35 @@ def training():
     class_weight = get_class_weight(y_train)
 
     model = create_model()
+    from keras import optimizers
     #model.compile(optimizer = 'adam', loss = 'binary_crossentropy', weighted_metrics=['accuracy'], metrics=['accuracy'])
-    model.compile(optimizer = 'adam', loss = 'mean_squared_error')
+    model.compile(optimizer = optimizers.Adam(lr = 0.01), loss = 'mean_squared_error')
     
     from keras.callbacks import ModelCheckpoint
     hist = model.fit(x_train, y_train,
             validation_data = (x_val, y_val, weight_val),
             nb_epoch = 10,
             batch_size = 128,
-            class_weight = class_weight,
+    #        class_weight = class_weight,
             sample_weight = weight_train,
             callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1)],
             )
+
+    bkg_pred = model.predict(x_val[np.where(y_val < 1)])
+    sn_pred = model.predict(x_val[np.where(y_val > 0)])
+
+    val_result = h5py.File("ValidationResult.h5",'w')
+    val_result['Signal'] = sn_pred
+    val_result['Background'] = bkg_pred
+    print "Save result to ValidationResult.h5"
+    val_result.close()
 
     histfile = 'history.sav'
     pickle.dump(hist.history, open(histfile,'wb'))
 
 def testing():
     print "Loading the model checkpoint..."
-    x_test, y_test, weight_test = load_dataset(DATA_DIR+"/CombinedDataset.h5",2)
+    x_test, y_test, weight_test = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",2)
     scale_dataset(x_test)
     x_bkg = x_test[np.where(y_test < 1)]
     print "Background size: {}".format(x_bkg.shape[0])
@@ -160,13 +171,15 @@ def testing():
     print "Signal size: {}".format(x_sn.shape[0])
 
     from keras.models import load_model
+
     model = load_model('CheckPoint.h5')
     bkg_pred = model.predict(x_bkg)
     sn_pred = model.predict(x_sn)
 
-    test_result = h5py.File("TestResult.h5")
+    test_result = h5py.File("TestResult.h5",'w')
     test_result['Signal'] = sn_pred
     test_result['Background'] = bkg_pred
+    print "Save result to TestResult.h5"
     test_result.close()
 
 if __name__ == "__main__":

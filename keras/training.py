@@ -83,14 +83,13 @@ def load_dataset(location, load_type = 0, small_sample=False):
         else: return "Test"
 
     dat = loadfile[decode(load_type)]
-    from keras.utils import to_categorical
     if not small_sample:
         _x = dat[:,2:]
-        _y = to_categorical(dat[:,0].astype(int),2)
+        _y = dat[:,0].astype(int)
         _weight = dat[:,1]*1e6
     else:
         _x = dat[0:10,2:]
-        _y = to_categorical(dat[0:10,0].astype(int),2)
+        _y = dat[0:10,0].astype(int)
         _weight = dat[0:10,1]*1e6
     return _x, _y, _weight
 
@@ -119,10 +118,10 @@ def create_model():
     # Training with a simple FFNN
     i = Input(shape=(14,))
     layer = Dense(1000, activation = 'relu')(i)
-    layer = Dense(10000, activation = 'relu')(layer)
+    layer = Dense(1000, activation = 'relu')(layer)
     layer = Dense(100, activation = 'relu')(layer)
-    o = Dense(2, activation = 'softmax')(layer)
-    #o = Dense(1)(layer)
+    #o = Dense(2, activation = 'softmax')(layer)
+    o = Dense(1, activation=None)(layer)
 
     model = Model(i,o)
     model.summary()
@@ -130,8 +129,12 @@ def create_model():
 
 def training():
     print "Loading data..."
-    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,small_sample=True)
-    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1,small_sample=True)
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,small_sample=False)
+    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1,small_sample=False)
+    
+    #from keras.utils import to_categorical
+    #y_train = to_categorical(y_train,2)
+    #y_val = to_categorical(y_val,2)
 
     print "Scaling features..."
     scale_fit(x_train)
@@ -149,15 +152,15 @@ def training():
 
     model = create_model()
     from keras import optimizers
-    model.compile(optimizer = optimizers.Adam(lr=1e-1), loss = 'binary_crossentropy')
-    #model.compile(optimizer = optimizers.Adam(lr = 1e-3), loss = 'mean_squared_error')
+    #model.compile(optimizer = optimizers.Adam(lr=1e-1), loss = 'binary_crossentropy')
+    model.compile(optimizer = optimizers.Adam(lr = 1e-3), loss = 'mean_squared_error')
     
     from keras.callbacks import ModelCheckpoint,EarlyStopping,ReduceLROnPlateau
     hist = model.fit(x_train, y_train,
             validation_data = (x_val, y_val, weight_val),
-            nb_epoch = 100,
-            batch_size = 1,
-            class_weight = class_weight,
+            nb_epoch = 10,
+            batch_size = 128,
+            #class_weight = class_weight,
             sample_weight = weight_train,
             callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1), ReduceLROnPlateau(patience = 10, factor = 0.1, verbose = 1)],
             )

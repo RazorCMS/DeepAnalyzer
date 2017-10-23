@@ -7,7 +7,8 @@ from sklearn.externals import joblib
 import pickle 
 import argparse
 
-DATA_DIR = '/bigdata/shared/analysis/'
+#DATA_DIR = '/bigdata/shared/analysis/'
+DATA_DIR = '/home/ubuntu/data/'
 SCALER = 'scaler.pkl'
 
 # Convert to regular numpy arrays

@@ -73,7 +73,7 @@ def create_dataset():
     print "Save divided datasets to {}/CombinedDataset_Balanced.h5".format(DATA_DIR)
     combine.close()
 
-def load_dataset(location, load_type = 0):
+def load_dataset(location, load_type = 0, small_sample=False):
     loadfile = h5py.File(location,"r")
 
     def decode(load_type):
@@ -82,9 +82,14 @@ def load_dataset(location, load_type = 0):
         else: return "Test"
 
     dat = loadfile[decode(load_type)]
-    _x = dat[:,2:]
-    _y = dat[:,0]
-    _weight = dat[:,1]*1e6
+    if not small_sample:
+        _x = dat[:,2:]
+        _y = dat[:,0]
+        _weight = dat[:,1]*1e6
+    else:
+        _x = dat[0:1000,2:]
+        _y = dat[0:1000,0]
+        _weight = dat[0:1000,1]*1e6
     return _x, _y, _weight
 
 def get_class_weight(label):
@@ -112,7 +117,8 @@ def create_model():
     # Training with a simple FFNN
     i = Input(shape=(14,))
     layer = Dense(1000, activation = 'relu')(i)
-    layer = Dense(100, activation = 'relu')(layer)
+    layer = Dense(1000, activation = 'relu')(layer)
+    layer = Dense(1000, activation = 'relu')(layer)
     layer = Dense(100, activation = 'relu')(layer)
     o = Dense(1, activation = 'sigmoid')(layer)
     #o = Dense(1)(layer)
@@ -123,8 +129,8 @@ def create_model():
 
 def training():
     print "Loading data..."
-    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0)
-    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1)
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,small_sample=True)
+    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1,small_sample=True)
 
     print "Scaling features..."
     #scale_fit(x_train)
@@ -145,7 +151,7 @@ def training():
             batch_size = 128,
     #        class_weight = class_weight,
             sample_weight = weight_train,
-            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1), ReduceLROnPlateau(factor=0.5, patience=0, min_lr=1e-6, verbose = 1), EarlyStopping(patience = 3)],
+            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1), ReduceLROnPlateau(factor=0.3, patience=0, min_lr=1e-6, verbose = 1), EarlyStopping(patience = 3)],
             )
 
     bkg_pred = model.predict(x_val[np.where(y_val < 0.5)])

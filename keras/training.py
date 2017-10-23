@@ -85,12 +85,12 @@ def load_dataset(location, load_type = 0, small_sample=False):
     dat = loadfile[decode(load_type)]
     if not small_sample:
         _x = dat[:,2:]
-        _y = dat[:,0]
+        _y = dat[:,0].astype(int)
         _weight = dat[:,1]*1e6
     else:
-        _x = dat[0:1000,2:]
-        _y = dat[0:1000,0]
-        _weight = dat[0:1000,1]*1e6
+        _x = dat[0:10,2:]
+        _y = dat[0:10,0].astype(int)
+        _weight = dat[0:10,1]*1e6
     return _x, _y, _weight
 
 def get_class_weight(label):
@@ -118,8 +118,7 @@ def create_model():
     # Training with a simple FFNN
     i = Input(shape=(14,))
     layer = Dense(1000, activation = 'relu')(i)
-    layer = Dense(1000, activation = 'relu')(layer)
-    layer = Dense(1000, activation = 'relu')(layer)
+    layer = Dense(10000, activation = 'relu')(layer)
     layer = Dense(100, activation = 'relu')(layer)
     o = Dense(1, activation = 'sigmoid')(layer)
     #o = Dense(1)(layer)
@@ -134,25 +133,32 @@ def training():
     x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1,small_sample=True)
 
     print "Scaling features..."
-    #scale_fit(x_train)
-    scale_dataset(x_train)
-    scale_dataset(x_val)
+    scale_fit(x_train)
+    x_train = scale_dataset(x_train)
+    x_val = scale_dataset(x_val)
+    
+    train_ds = h5py.File("TrainingDataset.h5","w")
+    train_ds['x'] = x_train
+    train_ds['y'] = y_train
+    train_ds['w'] = weight_train
+    train_ds.close()
+    print "Write to TrainingDataset.h5"
     
     class_weight = get_class_weight(y_train)
 
     model = create_model()
     from keras import optimizers
-    model.compile(optimizer = 'adam', loss = 'binary_crossentropy', weighted_metrics=['accuracy'], metrics=['accuracy'])
+    model.compile(optimizer = optimizers.Adam(lr=1e-1), loss = 'binary_crossentropy')
     #model.compile(optimizer = optimizers.Adam(lr = 1e-3), loss = 'mean_squared_error')
     
     from keras.callbacks import ModelCheckpoint,EarlyStopping,ReduceLROnPlateau
     hist = model.fit(x_train, y_train,
             validation_data = (x_val, y_val, weight_val),
-            nb_epoch = 50,
-            batch_size = 128,
-    #        class_weight = class_weight,
-            sample_weight = weight_train,
-            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1), ReduceLROnPlateau(factor=0.3, patience=0, min_lr=1e-6, verbose = 1), EarlyStopping(patience = 3)],
+            nb_epoch = 100,
+            batch_size = 1,
+            class_weight = class_weight,
+            #sample_weight = weight_train,
+            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1), ReduceLROnPlateau(patience = 10, factor = 0.1, verbose = 1)],
             )
 
     bkg_pred = model.predict(x_val[np.where(y_val < 0.5)])

@@ -83,13 +83,14 @@ def load_dataset(location, load_type = 0, small_sample=False):
         else: return "Test"
 
     dat = loadfile[decode(load_type)]
+    from keras.utils import to_categorical
     if not small_sample:
         _x = dat[:,2:]
-        _y = dat[:,0].astype(int)
+        _y = to_categorical(dat[:,0].astype(int),2)
         _weight = dat[:,1]*1e6
     else:
         _x = dat[0:10,2:]
-        _y = dat[0:10,0].astype(int)
+        _y = to_categorical(dat[0:10,0].astype(int),2)
         _weight = dat[0:10,1]*1e6
     return _x, _y, _weight
 
@@ -120,7 +121,7 @@ def create_model():
     layer = Dense(1000, activation = 'relu')(i)
     layer = Dense(10000, activation = 'relu')(layer)
     layer = Dense(100, activation = 'relu')(layer)
-    o = Dense(1, activation = 'sigmoid')(layer)
+    o = Dense(2, activation = 'softmax')(layer)
     #o = Dense(1)(layer)
 
     model = Model(i,o)
@@ -157,7 +158,7 @@ def training():
             nb_epoch = 100,
             batch_size = 1,
             class_weight = class_weight,
-            #sample_weight = weight_train,
+            sample_weight = weight_train,
             callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1), ReduceLROnPlateau(patience = 10, factor = 0.1, verbose = 1)],
             )
 

@@ -7,13 +7,13 @@ from sklearn.externals import joblib
 import pickle 
 import argparse
 
-#DATA_DIR = '/bigdata/shared/analysis/'
-DATA_DIR = '/home/ubuntu/data/'
+DATA_DIR = '/bigdata/shared/analysis/'
+#DATA_DIR = '/home/ubuntu/data/'
 SCALER = 'scaler.pkl'
 
 # Convert to regular numpy arrays
 def to_regular_array(struct_array):
-    return struct_array.view((np.float32, len(struct_array.dtype.names)))
+    return struct_array.view((np.float, len(struct_array.dtype.names)))
 
 def clean_dataset(arr):
     print "Before cleaning: {}".format(arr.shape)
@@ -23,6 +23,12 @@ def clean_dataset(arr):
     cleaned = pd.DataFrame.as_matrix(df[indices_to_keep].astype(np.float32))
     print "After cleaning: {}".format(cleaned.shape)
     return cleaned
+
+def remove_outlier(arr):
+    print "Removing outlier"
+    arr[arr < -90] = 0
+    arr[arr > 10000] = 10000
+    return arr
 
 def multiply_data(data, multiplicity):
     print "Dataset size before multiplicity: {}".format(data.shape[0])
@@ -60,6 +66,7 @@ def create_dataset():
 
     Dataset = to_regular_array(Dataset)
     Dataset = clean_dataset(Dataset)
+    Dataset = remove_outlier(Dataset)
     
     unique, counts = np.unique(Dataset[:,0], return_counts=True)
     occur = dict(zip(unique, counts)) # this hopefully returns {0: bkg, 1: sn}
@@ -73,6 +80,12 @@ def create_dataset():
     combine['Test'] = Dataset[val_index:]
     print "Save divided datasets to {}/CombinedDataset_Balanced.h5".format(DATA_DIR)
     combine.close()
+
+def has_nan(x, name=''):
+    if np.isnan(x).any():
+        print "Warning: {} has nan.".format(name)
+        return True
+    return False
 
 def load_dataset(location, load_type = 0, small_sample=False):
     loadfile = h5py.File(location,"r")
@@ -91,6 +104,9 @@ def load_dataset(location, load_type = 0, small_sample=False):
         _x = dat[0:1000000,2:]
         _y = dat[0:1000000,0]
         _weight = dat[0:1000000,1]*1e6
+    has_nan(_x)
+    has_nan(_y)
+    has_nan(_weight)
     return _x, _y, _weight
 
 def get_class_weight(label):
@@ -102,12 +118,13 @@ def get_class_weight(label):
     return class_weight
 
 def scale_fit(x_train):
-    scaler = preprocessing.RobustScaler().fit(x_train)
+    scaler = preprocessing.MinMaxScaler(feature_range=(0, 1)).fit(x_train)
     joblib.dump(scaler, SCALER)
     print "Saving scaler information to {}".format(SCALER)
 
 def scale_dataset(x_train):
     scaler = joblib.load(SCALER)
+    print scaler.scale_
     x_train = scaler.transform(x_train)
     return x_train
 
@@ -117,14 +134,14 @@ def create_model():
     
     # Training with a simple FFNN
     i = Input(shape=(14,))
-    layer = Dense(1000, activation = 'relu')(i)
+    layer = Dense(100, activation = 'relu')(i)
     layer = Dropout(0.5)(layer)
-    layer = Dense(1000, activation = 'relu')(layer)
+    layer = Dense(30, activation = 'relu')(layer)
     layer = Dropout(0.5)(layer)
-    layer = Dense(100, activation = 'relu')(layer)
+    layer = Dense(10, activation = 'relu')(layer)
     layer = Dropout(0.5)(layer)
-    #o = Dense(2, activation = 'softmax')(layer)
-    o = Dense(1, activation=None)(layer)
+    o = Dense(2, activation = 'softmax')(layer)
+    #o = Dense(1, activation=None)(layer)
 
     model = Model(i,o)
     model.summary()
@@ -135,15 +152,22 @@ def training():
     x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,small_sample=True)
     x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1,small_sample=True)
     
-    #from keras.utils import to_categorical
-    #y_train = to_categorical(y_train,2)
-    #y_val = to_categorical(y_val,2)
-
+    print x_train[1]
+    from keras.utils.np_utils import to_categorical
+    y_train = to_categorical(y_train,2)
+    has_nan(y_train,"training categorical label")
+    y_val = to_categorical(y_val,2)
+    has_nan(y_val,"validation categorical label")
+    
     print "Scaling features..."
+    has_nan(x_train, "unscaled training")
+    if not np.isfinite(x_train).all():
+        print "Unscaled training probably contains inf"
     scale_fit(x_train)
     x_train = scale_dataset(x_train)
     x_val = scale_dataset(x_val)
-    
+    has_nan(x_train, "scaled training")
+    has_nan(y_val, "scaled validation")
     train_ds = h5py.File("TrainingDataset.h5","w")
     train_ds['x'] = x_train
     train_ds['y'] = y_train
@@ -155,8 +179,8 @@ def training():
 
     model = create_model()
     from keras import optimizers
-    #model.compile(optimizer = optimizers.Adam(lr=1e-1), loss = 'binary_crossentropy')
-    model.compile(optimizer = optimizers.Adam(lr = 1e-3), loss = 'mean_squared_error')
+    model.compile(optimizer = optimizers.Adam(lr=1e-3), loss = 'binary_crossentropy')
+    #model.compile(optimizer = optimizers.Adam(lr = 1e-3), loss = 'mean_squared_error')
     
     from keras.callbacks import ModelCheckpoint,EarlyStopping,ReduceLROnPlateau
     hist = model.fit(x_train, y_train,
@@ -165,7 +189,7 @@ def training():
             batch_size = 128,
             #class_weight = class_weight,
             sample_weight = weight_train,
-            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1, save_best_only=True), ReduceLROnPlateau(patience = 10, factor = 0.1, verbose = 1, min_lr=1e-7)],
+            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1, save_best_only=True), ReduceLROnPlateau(patience = 5, factor = 0.1, verbose = 1, min_lr=1e-7), EarlyStopping(patience = 10)],
             )
 
     bkg_pred = model.predict(x_val[np.where(y_val < 0.5)])

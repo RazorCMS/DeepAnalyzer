@@ -8,11 +8,12 @@ import pickle
 import argparse
 
 DATA_DIR = '/bigdata/shared/analysis/'
+#DATA_DIR = '/home/ubuntu/data/'
 SCALER = 'scaler.pkl'
 
 # Convert to regular numpy arrays
 def to_regular_array(struct_array):
-    return struct_array.view((np.float32, len(struct_array.dtype.names)))
+    return struct_array.view((np.float, len(struct_array.dtype.names)))
 
 def clean_dataset(arr):
     print "Before cleaning: {}".format(arr.shape)
@@ -22,6 +23,12 @@ def clean_dataset(arr):
     cleaned = pd.DataFrame.as_matrix(df[indices_to_keep].astype(np.float32))
     print "After cleaning: {}".format(cleaned.shape)
     return cleaned
+
+def remove_outlier(arr):
+    print "Removing outlier"
+    arr[arr < -90] = 0
+    arr[arr > 10000] = 10000
+    return arr
 
 def multiply_data(data, multiplicity):
     print "Dataset size before multiplicity: {}".format(data.shape[0])
@@ -46,16 +53,12 @@ def create_dataset():
     print "Background size: {}".format(Background.shape[0]) 
     print "Signal size: {}".format(Signal.shape[0])
 
-    # Get shuffled unified dataset for training
-    #Dataset = np.hstack((Background, Signal))
-    #np.random.shuffle(Dataset)
+    Signal = multiply_data(Signal, 3483)
 
-    print "Signal: "
-    print Signal
-    print Signal['label']
-    _test = to_regular_array(Signal)
-    print _test[0]
-    
+    # Get shuffled unified dataset for training
+    Dataset = np.hstack((Background, Signal))
+    np.random.shuffle(Dataset)
+
     # 60% training, 20% validation, 20% testing
     data_size = Dataset.shape[0]
     training_index = int(0.6*data_size)
@@ -63,6 +66,7 @@ def create_dataset():
 
     Dataset = to_regular_array(Dataset)
     Dataset = clean_dataset(Dataset)
+    Dataset = remove_outlier(Dataset)
     
     unique, counts = np.unique(Dataset[:,0], return_counts=True)
     occur = dict(zip(unique, counts)) # this hopefully returns {0: bkg, 1: sn}
@@ -70,14 +74,20 @@ def create_dataset():
 
 
     # Save to files
-    combine = h5py.File(DATA_DIR+"/CombinedDataset.h5","w")
+    combine = h5py.File(DATA_DIR+"/CombinedDataset_Balanced.h5","w")
     combine['Training'] = Dataset[:training_index]
     combine['Validation'] = Dataset[training_index:val_index]
     combine['Test'] = Dataset[val_index:]
-    print "Save divided datasets to {}/CombinedDataset.h5".format(DATA_DIR)
+    print "Save divided datasets to {}/CombinedDataset_Balanced.h5".format(DATA_DIR)
     combine.close()
 
-def load_dataset(location, load_type = 0):
+def has_nan(x, name=''):
+    if np.isnan(x).any():
+        print "Warning: {} has nan.".format(name)
+        return True
+    return False
+
+def load_dataset(location, load_type = 0, small_sample=False):
     loadfile = h5py.File(location,"r")
 
     def decode(load_type):
@@ -86,9 +96,17 @@ def load_dataset(location, load_type = 0):
         else: return "Test"
 
     dat = loadfile[decode(load_type)]
-    _x = dat[:,2:]
-    _y = dat[:,0].astype(int)
-    _weight = dat[:,1]
+    if not small_sample:
+        _x = dat[:,2:]
+        _y = dat[:,0].astype(int)
+        _weight = dat[:,1]*1e6
+    else:
+        _x = dat[0:1000000,2:]
+        _y = dat[0:1000000,0]
+        _weight = dat[0:1000000,1]*1e6
+    has_nan(_x)
+    has_nan(_y)
+    has_nan(_weight)
     return _x, _y, _weight
 
 def get_class_weight(label):
@@ -100,27 +118,30 @@ def get_class_weight(label):
     return class_weight
 
 def scale_fit(x_train):
-    scaler = preprocessing.StandardScaler().fit(x_train)
+    scaler = preprocessing.MinMaxScaler(feature_range=(0, 1)).fit(x_train)
     joblib.dump(scaler, SCALER)
     print "Saving scaler information to {}".format(SCALER)
 
 def scale_dataset(x_train):
     scaler = joblib.load(SCALER)
+    print scaler.scale_
     x_train = scaler.transform(x_train)
     return x_train
 
 def create_model():
     from keras.models import Model
-    from keras.layers import Input, Dense
+    from keras.layers import Input, Dense, Dropout
     
     # Training with a simple FFNN
     i = Input(shape=(14,))
     layer = Dense(100, activation = 'relu')(i)
-    layer = Dense(100, activation = 'relu')(layer)
-    layer = Dense(100, activation = 'relu')(layer)
-    layer = Dense(100, activation = 'relu')(layer)
+    layer = Dropout(0.5)(layer)
+    layer = Dense(30, activation = 'relu')(layer)
+    layer = Dropout(0.5)(layer)
     layer = Dense(10, activation = 'relu')(layer)
-    o = Dense(1, activation = 'sigmoid')(layer)
+    layer = Dropout(0.5)(layer)
+    o = Dense(2, activation = 'softmax')(layer)
+    #o = Dense(1, activation=None)(layer)
 
     model = Model(i,o)
     model.summary()
@@ -128,33 +149,107 @@ def create_model():
 
 def training():
     print "Loading data..."
-    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset.h5",0)
-    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset.h5",1)
-
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,small_sample=True)
+    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1,small_sample=True)
+    
+    print x_train[1]
+    from keras.utils.np_utils import to_categorical
+    y_train = to_categorical(y_train,2)
+    has_nan(y_train,"training categorical label")
+    y_val = to_categorical(y_val,2)
+    has_nan(y_val,"validation categorical label")
+    
     print "Scaling features..."
+    has_nan(x_train, "unscaled training")
+    if not np.isfinite(x_train).all():
+        print "Unscaled training probably contains inf"
     scale_fit(x_train)
-    scale_dataset(x_train)
-    scale_dataset(x_val)
+    x_train = scale_dataset(x_train)
+    x_val = scale_dataset(x_val)
+    has_nan(x_train, "scaled training")
+    has_nan(y_val, "scaled validation")
+    train_ds = h5py.File("TrainingDataset.h5","w")
+    train_ds['x'] = x_train
+    train_ds['y'] = y_train
+    train_ds['w'] = weight_train
+    train_ds.close()
+    print "Write to TrainingDataset.h5"
     
     class_weight = get_class_weight(y_train)
 
     model = create_model()
-    model.compile(optimizer = 'adam', loss = 'binary_crossentropy', weighted_metrics=['accuracy'])
+    from keras import optimizers
+    model.compile(optimizer = optimizers.Adam(lr=1e-3), loss = 'binary_crossentropy')
+    #model.compile(optimizer = optimizers.Adam(lr = 1e-3), loss = 'mean_squared_error')
     
-    from keras.callbacks import ModelCheckpoint
+    from keras.callbacks import ModelCheckpoint,EarlyStopping,ReduceLROnPlateau
     hist = model.fit(x_train, y_train,
-            validation_data = (x_val, y_val, sample_weight_val),
-            nb_epoch = 10,
+            validation_data = (x_val, y_val, weight_val),
+            nb_epoch = 100,
             batch_size = 128,
-            shuffle = False,
-            class_weight = class_weight,
-            sample_weight = sample_weight_train,
-            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1)],
+            #class_weight = class_weight,
+            sample_weight = weight_train,
+            callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1, save_best_only=True), ReduceLROnPlateau(patience = 5, factor = 0.1, verbose = 1, min_lr=1e-7), EarlyStopping(patience = 10)],
             )
+
+    bkg_pred = model.predict(x_val[np.where(y_val < 0.5)])
+    sn_pred = model.predict(x_val[np.where(y_val > 0.5)])
+
+    val_result = h5py.File("ValidationResult.h5",'w')
+    val_result['Signal'] = sn_pred
+    val_result['Background'] = bkg_pred
+    print "Save result to ValidationResult.h5"
+    val_result.close()
 
     histfile = 'history.sav'
     pickle.dump(hist.history, open(histfile,'wb'))
 
-create_dataset()
-training()
+def testing():
+    print "Loading the model checkpoint..."
+    x_test, y_test, weight_test = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",2,small_sample=True)
+    x_test = scale_dataset(x_test)
+
+    x_bkg = x_test[np.where(y_test < 0.5)]
+    w_bkg = weight_test[np.where(y_test<0.5)]
+    print "Background size: {}".format(x_bkg.shape[0])
+    x_sn = x_test[np.where(y_test > 0.5)]
+    w_sn = weight_test[np.where(y_test>0.5)]
+    print "Signal size: {}".format(x_sn.shape[0])
+
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,small_sample=True)
+    x_train = scale_dataset(x_train)
+    bkg_train = x_train[np.where(y_train < 0.5)]
+    sn_train = x_train[np.where(y_train > 0.5)]
+    w_bkg_train = weight_train[np.where(y_train < 0.5)]
+    w_sn_train = weight_train[np.where(y_train > 0.5)]
+
+    from keras.models import load_model
+
+    model = load_model('CheckPoint.h5')
+    bkg_pred = model.predict(x_bkg)
+    sn_pred = model.predict(x_sn)
+
+    bkg_train_pred = model.predict(bkg_train)
+    sn_train_pred = model.predict(sn_train)
+
+    test_result = h5py.File("TestResult.h5",'w')
+    test_result['Signal'] = sn_pred
+    test_result['SignalWeight'] = w_sn
+    test_result['Background'] = bkg_pred
+    test_result['BackgroundWeight'] = w_bkg
+    print "Save result to TestResult.h5"
+    test_result.close()
+
+    train_result = h5py.File("TrainResult.h5",'w')
+    train_result['Signal'] = sn_train_pred
+    train_result['SignalWeight'] = w_sn_train
+    train_result['Background'] = bkg_train_pred
+    train_result['BackgroundWeight'] = w_bkg_train
+    print "Save result to TrainResult.h5"
+    train_result.close()
+
+if __name__ == "__main__":
+#    create_dataset()
+    training()
+#    testing()
 

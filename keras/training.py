@@ -179,9 +179,9 @@ def create_model():
     # Training with a simple FFNN
     i = Input(shape=(14,))
     layer = Dense(100, activation = 'relu')(i)
-    layer = Dropout(0.5)(layer)
+    layer = Dropout(0.1)(layer)
     layer = Dense(30, activation = 'relu')(layer)
-    layer = Dropout(0.5)(layer)
+    layer = Dropout(0.2)(layer)
     layer = Dense(10, activation = 'relu')(layer)
     layer = Dropout(0.5)(layer)
     o = Dense(2, activation = 'softmax')(layer)
@@ -254,9 +254,9 @@ def training(train_size = 0):
     histfile = 'history.sav'
     pickle.dump(hist.history, open(histfile,'wb'))
 
-def testing():
+def testing(sample_size = 0):
     print "Loading the model checkpoint..."
-    x_test, y_test, weight_test = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",2,small_sample=True)
+    x_test, y_test, weight_test = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",2,train_size = sample_size)
     x_test = scale_dataset(x_test)
 
     x_bkg = x_test[np.where(y_test < 0.5)]
@@ -266,7 +266,7 @@ def testing():
     w_sn = weight_test[np.where(y_test>0.5)]
     print "Signal size: {}".format(x_sn.shape[0])
 
-    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,small_sample=True)
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,train_size = sample_size)
     x_train = scale_dataset(x_train)
 
     y_num = np.argmax(y_train, axis=1)
@@ -315,5 +315,5 @@ if __name__ == "__main__":
         create_dataset()
     training(args.sample)
     if args.test:
-        testing()
+        testing(args.sample)
 

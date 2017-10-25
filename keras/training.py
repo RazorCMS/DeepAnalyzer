@@ -6,6 +6,7 @@ from sklearn import preprocessing
 from sklearn.externals import joblib
 import pickle 
 import argparse
+import os
 
 DATA_DIR = '/bigdata/shared/analysis/'
 #DATA_DIR = '/home/ubuntu/data/'
@@ -13,7 +14,11 @@ SCALER = 'scaler.pkl'
 
 # Convert to regular numpy arrays
 def to_regular_array(struct_array):
-    return struct_array.view((np.float, len(struct_array.dtype.names)))
+    # There is an integer column (nSelectedJets) in the structured array. Need to convert to float before converting to regular array
+    dt = struct_array.dtype.descr
+    dt[13] = (dt[13][0],np.float32)
+    converted = np.array(struct_array, dtype=dt)
+    return converted.view((np.float32, len(converted.dtype.names)))
 
 def clean_dataset(arr):
     print "Before cleaning: {}".format(arr.shape)
@@ -25,9 +30,52 @@ def clean_dataset(arr):
     return cleaned
 
 def remove_outlier(arr):
+    # Will remove outlier according to each feature.
+    # In order: 'alphaT','dPhiMinJetMET','dPhiRazor','HT','jet1MT','leadingJetCISV','leadingJetPt','MET','MHT','MR','MT2','nSelectedJets','Rsq','subleadingJetPt'
     print "Removing outlier"
-    arr[arr < -90] = 0
-    arr[arr > 10000] = 10000
+    # alphaT
+    arr[arr[:,0] < 0] = 0
+    arr[arr[:,0] > 10] = 10
+    # dPhiMinJetMET
+    arr[arr[:,1] < -np.pi] = 0
+    arr[arr[:,1] > np.pi] = 0 # unphysical
+    # dPhiRazor
+    arr[arr[:,2] < -np.pi] = 0 # unphysical
+    arr[arr[:,2] > np.pi] = 0
+    # HT
+    arr[arr[:,3] < 0] = 0
+    arr[arr[:,3] > 3000] = 3000
+    # jet1MT
+    arr[arr[:,4] < 0] = 0
+    arr[arr[:,4] > 3000] = 3000
+    # leadingJetCISV
+    arr[arr[:,5] < 0] = 0
+    arr[arr[:,5] > 1.] = 1.
+    # leadingJetPT
+    arr[arr[:,6] < 0] = 0
+    arr[arr[:,6] > 2000] = 2000
+    # MET 
+    arr[arr[:,7] < 0] = 0
+    arr[arr[:,7] > 5000] = 5000
+    # MHT
+    arr[arr[:,8] < 0] = 0
+    arr[arr[:,8] > 2000] = 2000
+    # MR
+    arr[arr[:,9] < 0] = 0
+    arr[arr[:,9] > 5000] = 5000
+    # MT2
+    arr[arr[:,10] < 0] = 0
+    arr[arr[:,10] > 5000] = 5000
+    # nSelectedJet
+    arr[arr[:,11] < 0] = 0
+    arr[arr[:,11] > 20] = 20
+    # Rsq
+    arr[arr[:,12] < 0] = 0
+    arr[arr[:,12] > 2] = 2
+    # subleadingJetPt
+    arr[arr[:,13] < 0] = 0
+    arr[arr[:,13] > 2000] = 2000
+
     return arr
 
 def multiply_data(data, multiplicity):
@@ -35,8 +83,6 @@ def multiply_data(data, multiplicity):
     for i in range(multiplicity):
         if i==0: sum_data = np.copy(data)
         else: sum_data = np.hstack((sum_data, data))
-    # Reduce the weight of the sum:
-    # sum_data['weight'] /= multiplicity
     print "Dataset size after multiplicity: {}".format(sum_data.shape[0])
     return sum_data
 
@@ -66,7 +112,6 @@ def create_dataset():
 
     Dataset = to_regular_array(Dataset)
     Dataset = clean_dataset(Dataset)
-    Dataset = remove_outlier(Dataset)
     
     unique, counts = np.unique(Dataset[:,0], return_counts=True)
     occur = dict(zip(unique, counts)) # this hopefully returns {0: bkg, 1: sn}
@@ -87,7 +132,7 @@ def has_nan(x, name=''):
         return True
     return False
 
-def load_dataset(location, load_type = 0, small_sample=False):
+def load_dataset(location, load_type = 0, train_size = 0):
     loadfile = h5py.File(location,"r")
 
     def decode(load_type):
@@ -96,14 +141,14 @@ def load_dataset(location, load_type = 0, small_sample=False):
         else: return "Test"
 
     dat = loadfile[decode(load_type)]
-    if not small_sample:
+    if train_size==0:
         _x = dat[:,2:]
         _y = dat[:,0].astype(int)
         _weight = dat[:,1]*1e6
     else:
-        _x = dat[0:1000000,2:]
-        _y = dat[0:1000000,0]
-        _weight = dat[0:1000000,1]*1e6
+        _x = dat[0:train_size,2:]
+        _y = dat[0:train_size,0]
+        _weight = dat[0:train_size,1]*1e6
     has_nan(_x)
     has_nan(_y)
     has_nan(_weight)
@@ -124,9 +169,8 @@ def scale_fit(x_train):
 
 def scale_dataset(x_train):
     scaler = joblib.load(SCALER)
-    print scaler.scale_
-    x_train = scaler.transform(x_train)
-    return x_train
+    _x_train = scaler.transform(x_train)
+    return _x_train
 
 def create_model():
     from keras.models import Model
@@ -147,12 +191,14 @@ def create_model():
     model.summary()
     return model
 
-def training():
+def training(train_size = 0):
     print "Loading data..."
-    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,small_sample=True)
-    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1,small_sample=True)
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,train_size = train_size)
+    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1,train_size=train_size)
+
+    x_train = remove_outlier(x_train)
+    x_val = remove_outlier(x_val)
     
-    print x_train[1]
     from keras.utils.np_utils import to_categorical
     y_train = to_categorical(y_train,2)
     has_nan(y_train,"training categorical label")
@@ -168,6 +214,8 @@ def training():
     x_val = scale_dataset(x_val)
     has_nan(x_train, "scaled training")
     has_nan(y_val, "scaled validation")
+
+    # Save scaled training input to file
     train_ds = h5py.File("TrainingDataset.h5","w")
     train_ds['x'] = x_train
     train_ds['y'] = y_train
@@ -184,7 +232,8 @@ def training():
     
     from keras.callbacks import ModelCheckpoint,EarlyStopping,ReduceLROnPlateau
     hist = model.fit(x_train, y_train,
-            validation_data = (x_val, y_val, weight_val),
+            #validation_data = (x_val, y_val, weight_val),
+            validation_data = (x_val, y_val),
             nb_epoch = 100,
             batch_size = 128,
             #class_weight = class_weight,
@@ -192,8 +241,9 @@ def training():
             callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1, save_best_only=True), ReduceLROnPlateau(patience = 5, factor = 0.1, verbose = 1, min_lr=1e-7), EarlyStopping(patience = 10)],
             )
 
-    bkg_pred = model.predict(x_val[np.where(y_val < 0.5)])
-    sn_pred = model.predict(x_val[np.where(y_val > 0.5)])
+    y_num = np.argmax(y_val, axis=1)
+    bkg_pred = model.predict(x_val[np.where(y_num < 0.5)])
+    sn_pred = model.predict(x_val[np.where(y_num > 0.5)])
 
     val_result = h5py.File("ValidationResult.h5",'w')
     val_result['Signal'] = sn_pred
@@ -218,10 +268,12 @@ def testing():
 
     x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,small_sample=True)
     x_train = scale_dataset(x_train)
-    bkg_train = x_train[np.where(y_train < 0.5)]
-    sn_train = x_train[np.where(y_train > 0.5)]
-    w_bkg_train = weight_train[np.where(y_train < 0.5)]
-    w_sn_train = weight_train[np.where(y_train > 0.5)]
+
+    y_num = np.argmax(y_train, axis=1)
+    bkg_train = x_train[np.where(y_num < 0.5)]
+    sn_train = x_train[np.where(y_num > 0.5)]
+    w_bkg_train = weight_train[np.where(y_num < 0.5)]
+    w_sn_train = weight_train[np.where(y_num > 0.5)]
 
     from keras.models import load_model
 
@@ -249,7 +301,19 @@ def testing():
     train_result.close()
 
 if __name__ == "__main__":
-#    create_dataset()
-    training()
-#    testing()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c','--create', action='store_true', help='Create dataset')
+    parser.add_argument('-t','--test', action='store_true', help='Test on validation set')
+    parser.add_argument('-s','--sample', type=int, default=0, help='Use a small sample for training and validation')
+    parser.add_argument('-d','--device', default="0", help='GPU device to use')
+    args = parser.parse_args()
+
+    print "Using GPU ",args.device
+    os.environ["CUDA_VISIBLE_DEVICES"]=args.device
+
+    if args.create:
+        create_dataset()
+    training(args.sample)
+    if args.test:
+        testing()
 

@@ -179,11 +179,11 @@ def create_model():
     # Training with a simple FFNN
     i = Input(shape=(14,))
     layer = Dense(100, activation = 'relu')(i)
-    layer = Dropout(0.1)(layer)
+    #layer = Dropout(0.1)(layer)
     layer = Dense(30, activation = 'relu')(layer)
-    layer = Dropout(0.2)(layer)
+    #layer = Dropout(0.2)(layer)
     layer = Dense(10, activation = 'relu')(layer)
-    layer = Dropout(0.5)(layer)
+    #layer = Dropout(0.5)(layer)
     o = Dense(2, activation = 'softmax')(layer)
     #o = Dense(1, activation=None)(layer)
 
@@ -227,7 +227,7 @@ def training(train_size = 0):
 
     model = create_model()
     from keras import optimizers
-    model.compile(optimizer = optimizers.Adam(lr=1e-3), loss = 'binary_crossentropy')
+    model.compile(optimizer = optimizers.Adam(lr=1e-3), loss = 'binary_crossentropy', metrics=['accuracy'])
     #model.compile(optimizer = optimizers.Adam(lr = 1e-3), loss = 'mean_squared_error')
     
     from keras.callbacks import ModelCheckpoint,EarlyStopping,ReduceLROnPlateau
@@ -237,7 +237,7 @@ def training(train_size = 0):
             nb_epoch = 100,
             batch_size = 128,
             #class_weight = class_weight,
-            sample_weight = weight_train,
+            #sample_weight = weight_train,
             callbacks = [ModelCheckpoint(filepath='CheckPoint.h5', verbose = 1, save_best_only=True), ReduceLROnPlateau(patience = 5, factor = 0.1, verbose = 1, min_lr=1e-7), EarlyStopping(patience = 10)],
             )
 

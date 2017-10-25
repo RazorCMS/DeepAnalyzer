@@ -243,7 +243,7 @@ def training(train_size = 0, use_weight=False):
             batch_size = 128,
             class_weight = class_weight,
             sample_weight = sample_weight,
-            callbacks = [ModelCheckpoint(filepath='CheckPoint%d.h5'%(train_size), verbose = 1, save_best_only=True), ReduceLROnPlateau(patience = 5, factor = 0.1, verbose = 1, min_lr=1e-7), EarlyStopping(patience = 10)],
+            callbacks = [ModelCheckpoint(filepath='CheckPoint%d.h5'%(train_size), verbose = 1, save_best_only=True), ReduceLROnPlateau(patience = 4, factor = 0.5, verbose = 1, min_lr=1e-7), EarlyStopping(patience = 10)],
             )
 
     histfile = 'history%d.sav'%(train_size)
@@ -251,15 +251,16 @@ def training(train_size = 0, use_weight=False):
     print ("Save history to history%d.sav"%(train_size))
 
     val_pred = model.predict(x_val)
-    
+    val_label = np.argmax(y_val, axis=1)
+
     val_result = h5py.File("ValidationResult%d.h5"%(train_size),'w')
     val_result.create_dataset("Prediction", data = val_pred)
-    val_result.create_dataset("Truth", data = y_val)
+    val_result.create_dataset("Truth", data = val_label)
     val_result.create_dataset("Weight", data = weight_val)
     print ("Save result to ValidationResult%d.h5"%(train_size))
     val_result.close()
 
-def testing(sample_size = 0):
+def testing(sample_size = 0, use_weight=False):
     print ("Loading the model checkpoint...")
     x_test, y_test, weight_test = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",2,train_size = sample_size)
     x_test = scale_dataset(x_test)
@@ -276,12 +277,14 @@ def testing(sample_size = 0):
     test_result.create_dataset("Prediction",data=test_pred)
     test_result.create_dataset("Truth",data=y_test)
     test_result.create_dataset("Weight",data=weight_test)
+    print("Save to TestResult%d.h5"%(sample_size))
     test_result.close()
 
     train_result = h5py.File("TrainResult%d.h5"%(sample_size),"w")
     train_result.create_dataset("Prediction",data=train_pred)
     train_result.create_dataset("Truth",data=y_train)
     train_result.create_dataset("Weight",data=weight_train)
+    print("Save to TrainResult%d.h5"%(sample_size))
     train_result.close()
 
 if __name__ == "__main__":

@@ -313,7 +313,9 @@ if __name__ == "__main__":
 
     if args.create:
         create_dataset()
-    training(args.sample)
     if args.test:
         testing(args.sample)
+    else:
+        training(args.sample)
+        
 

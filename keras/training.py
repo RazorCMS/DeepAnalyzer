@@ -143,11 +143,12 @@ def load_dataset(location, load_type = 0, train_size = 0):
     if train_size==0:
         _x = dat[:,2:]
         _y = dat[:,0].astype(int)
-        _weight = dat[:,1]
+        _weight = dat[:,1]*1e6
     else:
-        _x = dat[0:train_size,2:]
-        _y = dat[0:train_size,0]
-        _weight = dat[0:train_size,1]
+        print ("Loading sample size {}".format(train_size))
+        _x = dat[0:int(train_size),2:]
+        _y = dat[0:int(train_size),0]
+        _weight = dat[0:int(train_size),1]*1e6
     has_nan(_x)
     has_nan(_y)
     has_nan(_weight)
@@ -175,20 +176,73 @@ def scale_dataset(x_train, sample_size=0):
     _x_train = scaler.transform(x_train)
     return _x_train
 
-def create_model():
-    from keras.models import Model
+def create_model(optimizer='adam', layers=3):
+    from keras.models import Sequential
     from keras.layers import Input, Dense, Dropout
     
     # Training with a simple FFNN
-    i = Input(shape=(14,))
-    layer = Dense(100, activation = 'relu')(i)
-    layer = Dense(30, activation = 'relu')(layer)
-    layer = Dense(10, activation = 'relu')(layer)
-    o = Dense(2, activation = 'softmax')(layer)
+    model = Sequential()
+    #model.add(Input(shape=(14,)))
+    for l in range(layers):
+        size = int(100/(l+1))
+        if l==0: 
+            model.add(Dense(size, input_shape=(14,), activation='relu'))
+        else:
+            model.add(Dense(size, activation='relu'))
+    #layer = Dense(100, activation = 'relu')(i)
+    #layer = Dense(30, activation = 'relu')(layer)
+    #layer = Dense(10, activation = 'relu')(layer)
+    model.add(Dense(2, activation = 'softmax'))
 
-    model = Model(i,o)
     model.summary()
+    model.compile(optimizer = optimizer, loss = 'binary_crossentropy', metrics=['accuracy'])
     return model
+
+def tuning(sample_size = 0):
+    print ("Tuning the model")
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,train_size = sample_size)
+    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1,train_size=sample_size)
+
+    x_train = remove_outlier(x_train)
+    x_val = remove_outlier(x_val)
+    
+    from keras.utils.np_utils import to_categorical
+    y_train = to_categorical(y_train,2)
+    has_nan(y_train,"training categorical label")
+    y_val = to_categorical(y_val,2)
+    has_nan(y_val,"validation categorical label")
+    
+    print ("Scaling features...")
+    has_nan(x_train, "unscaled training")
+    if not np.isfinite(x_train).all():
+        print ("Unscaled training probably contains inf")
+    scale_fit(x_train, sample_size)
+    x_train = scale_dataset(x_train, sample_size)
+    x_val = scale_dataset(x_val, sample_size)
+    has_nan(x_train, "scaled training")
+    has_nan(y_val, "scaled validation")
+    
+    class_weight = get_class_weight(y_train)
+    
+    from sklearn.model_selection import GridSearchCV
+    from keras.wrappers.scikit_learn import KerasClassifier 
+    
+    # create model
+    model = KerasClassifier(build_fn=create_model, epochs=100, batch_size=1000, verbose=0)
+    # define the grid search parameters
+    optimizer = ['SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adam', 'Adamax', 'Nadam']
+    layers = [1, 3, 5]
+    param_grid = dict(optimizer=optimizer, layers=layers)
+    grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=1)
+    grid_result = grid.fit(x_train, y_train)
+    # summarize results
+    print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
+    means = grid_result.cv_results_['mean_test_score']
+    stds = grid_result.cv_results_['std_test_score']
+    params = grid_result.cv_results_['params']
+    for mean, stdev, param in zip(means, stds, params):
+            print("%f (%f) with: %r" % (mean, stdev, param))
+
 
 def training(train_size = 0, not_use_weight=False, label='Default'):
     print ("Loading data...")
@@ -235,11 +289,8 @@ def training(train_size = 0, not_use_weight=False, label='Default'):
     class_weight = get_class_weight(y_train)
 
     model = create_model()
-    from keras import optimizers
-    model.compile(optimizer = optimizers.Nadam(), loss = 'binary_crossentropy', metrics=['accuracy'])
-    
     # serialize model to JSON
-    model_json = model.to_json()
+    #model_json = model.to_json()
     with open("model.json", "w") as json_file:
         json_file.write(model_json)
     print ("Write to model.json")
@@ -320,15 +371,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-c','--create', action='store_true', help='Create dataset')
     parser.add_argument('-t','--test', action='store_true', help='Test on validation set')
-    parser.add_argument('-s','--sample', type=int, default=0, help='Use a small sample for training and validation')
+    parser.add_argument('-u','--tune', action='store_true', help='Model tuning')
+    parser.add_argument('-s','--sample', default=0, help='Use a small sample for training and validation')
     parser.add_argument('-d','--device', default="0", help='GPU device to use')
     parser.add_argument('-nw','--noweight', action='store_true', help='Not use sample weights')
     parser.add_argument('-l','--label', default='', help='Label for benchmark study')
 
     args = parser.parse_args()
 
-    print ("Using GPU ",args.device)
     if args.noweight: print ("Not using sample weight")
+    print ("Using GPU(s):",args.device)
     os.environ["CUDA_VISIBLE_DEVICES"]=args.device
 
 
@@ -336,7 +388,8 @@ if __name__ == "__main__":
         create_dataset()
     if args.test:
         testing(args.sample, label=args.label)
+    elif args.tune:
+        tuning(args.sample)
     else:
         training(args.sample, not_use_weight = args.noweight, label=args.label)
         
-

@@ -271,29 +271,29 @@ def training(train_size = 0, not_use_weight=False, label='Default'):
     if not os.path.isdir('ScaledInput'):
         os.makedirs('ScaledInput')
     # Save scaled training input to file
-    train_ds = h5py.File("ScaledInput/TrainingDataset%d.h5"%(train_size),"w")
+    train_ds = h5py.File("ScaledInput/TrainingDataset{}.h5".format(train_size),"w")
     train_ds['x'] = x_train
     train_ds['y'] = y_train
     train_ds['w'] = weight_train
     train_ds.close()
-    print ("Write to ScaledInput/TrainingDataset%d.h5"%(train_size))
+    print ("Write to ScaledInput/TrainingDataset{}.h5".format(train_size))
     
     # Save scaled val input to file
-    val_ds = h5py.File("ScaledInput/ValidationDataset%d.h5"%(train_size),"w")
+    val_ds = h5py.File("ScaledInput/ValidationDataset{}.h5".format(train_size),"w")
     val_ds['x'] = x_val
     val_ds['y'] = y_val
     val_ds['w'] = weight_val
     val_ds.close()
-    print ("Write to ScaledInput/ValidationDataset%d.h5"%(train_size))
+    print ("Write to ScaledInput/ValidationDataset{}.h5".format(train_size))
     
     class_weight = get_class_weight(y_train)
 
     model = create_model()
     # serialize model to JSON
     #model_json = model.to_json()
-    with open("model.json", "w") as json_file:
-        json_file.write(model_json)
-    print ("Write to model.json")
+    #with open("model.json", "w") as json_file:
+    #    json_file.write(model_json)
+    #print ("Write to model.json")
 
     if (not_use_weight):
         val_tuple = (x_val, y_val)
@@ -311,7 +311,7 @@ def training(train_size = 0, not_use_weight=False, label='Default'):
             batch_size = 128,
             class_weight = class_weight,
             sample_weight = sample_weight,
-            callbacks = [ModelCheckpoint(filepath='CheckPoint/CheckPoint%d_%s.h5'%(train_size,label), verbose = 1, 
+            callbacks = [ModelCheckpoint(filepath='CheckPoint/CheckPoint{}_{}.h5'.format(train_size,label), verbose = 1, 
                 save_best_only=True), 
                 ReduceLROnPlateau(patience = 4, factor = 0.5, verbose = 1, min_lr=1e-7), 
                 EarlyStopping(patience = 10)],
@@ -319,9 +319,9 @@ def training(train_size = 0, not_use_weight=False, label='Default'):
 
     if not os.path.isdir('History'):
         os.makedirs('History')
-    histfile = 'History/history%d_%s.sav'%(train_size, label)
+    histfile = 'History/history{}_{}.sav'.format(train_size, label)
     pickle.dump(hist.history, open(histfile,'wb'))
-    print ("Save history to History/history%d_%s.sav"%(train_size, label))
+    print ("Save history to History/history{}_{}.sav".format(train_size, label))
 
     val_pred = model.predict(x_val)
     val_label = np.argmax(y_val, axis=1)
@@ -347,20 +347,20 @@ def testing(sample_size = 0, label='Default'):
 
     from keras.models import load_model
     print ("Loading the model checkpoint: CheckPoint/CheckPoint%d_%s.h5"%(sample_size,label))
-    model = load_model('CheckPoint/CheckPoint%d_%s.h5'%(sample_size, label))
+    model = load_model('CheckPoint/CheckPoint{}_{}.h5'.format(sample_size, label))
     test_pred = model.predict(x_test)
     train_pred = model.predict(x_train)
 
     if not os.path.isdir('Result'):
         os.makedirs('Result')
-    test_result = h5py.File("Result/TestResult%d_%s.h5"%(sample_size, label),"w")
+    test_result = h5py.File("Result/TestResult{}_{}.h5".format(sample_size, label),"w")
     test_result.create_dataset("Prediction",data=test_pred)
     test_result.create_dataset("Truth",data=y_test)
     test_result.create_dataset("Weight",data=weight_test)
     print("Save to TestResult%d_%s.h5"%(sample_size, label))
     test_result.close()
 
-    train_result = h5py.File("Result/TrainResult%d_%s.h5"%(sample_size, label),"w")
+    train_result = h5py.File("Result/TrainResult{}_{}.h5".format(sample_size, label),"w")
     train_result.create_dataset("Prediction",data=train_pred)
     train_result.create_dataset("Truth",data=y_train)
     train_result.create_dataset("Weight",data=weight_train)

@@ -143,12 +143,12 @@ def load_dataset(location, load_type = 0, train_size = 0):
     if train_size==0:
         _x = dat[:,2:]
         _y = dat[:,0].astype(int)
-        _weight = dat[:,1]*1e6
+        _weight = dat[:,1]*1e5
     else:
         print ("Loading sample size {}".format(train_size))
         _x = dat[0:int(train_size),2:]
         _y = dat[0:int(train_size),0]
-        _weight = dat[0:int(train_size),1]*1e6
+        _weight = dat[0:int(train_size),1]*1e5
     has_nan(_x)
     has_nan(_y)
     has_nan(_weight)
@@ -176,22 +176,19 @@ def scale_dataset(x_train, sample_size=0):
     _x_train = scaler.transform(x_train)
     return _x_train
 
-def create_model(optimizer='adam', layers=3):
+def create_model(optimizer='Nadam', layers=9, init_size = 500):
     from keras.models import Sequential
     from keras.layers import Input, Dense, Dropout
     
     # Training with a simple FFNN
     model = Sequential()
-    #model.add(Input(shape=(14,)))
-    for l in range(layers):
-        size = int(100/(l+1))
-        if l==0: 
+    for lay in range(layers):
+        size = int(init_size/2**lay)
+        if size < 5: break
+        if lay==0: 
             model.add(Dense(size, input_shape=(14,), activation='relu'))
         else:
             model.add(Dense(size, activation='relu'))
-    #layer = Dense(100, activation = 'relu')(i)
-    #layer = Dense(30, activation = 'relu')(layer)
-    #layer = Dense(10, activation = 'relu')(layer)
     model.add(Dense(2, activation = 'softmax'))
 
     model.summary()
@@ -230,9 +227,9 @@ def tuning(sample_size = 0):
     # create model
     model = KerasClassifier(build_fn=create_model, epochs=100, batch_size=1000, verbose=0)
     # define the grid search parameters
-    optimizer = ['SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adam', 'Adamax', 'Nadam']
-    layers = [1, 3, 5]
-    param_grid = dict(optimizer=optimizer, layers=layers)
+    init_size = [ 100, 500, 1000]
+    layers = [3,5,7,9]
+    param_grid = dict(init_size=init_size, layers=layers)
     grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=1)
     grid_result = grid.fit(x_train, y_train)
     # summarize results
@@ -308,13 +305,14 @@ def training(train_size = 0, not_use_weight=False, label='Default'):
     hist = model.fit(x_train, y_train,
             validation_data = val_tuple,
             epochs = 100,
-            batch_size = 128,
+            batch_size = 1280,
             class_weight = class_weight,
             sample_weight = sample_weight,
             callbacks = [ModelCheckpoint(filepath='CheckPoint/CheckPoint{}_{}.h5'.format(train_size,label), verbose = 1, 
                 save_best_only=True), 
-                ReduceLROnPlateau(patience = 4, factor = 0.5, verbose = 1, min_lr=1e-7), 
-                EarlyStopping(patience = 10)],
+                #ReduceLROnPlateau(patience = 4, factor = 0.5, verbose = 1, min_lr=1e-7), 
+                #EarlyStopping(patience = 10)
+                ],
             )
 
     if not os.path.isdir('History'):

@@ -176,7 +176,7 @@ def scale_dataset(x_train, sample_size=0):
     _x_train = scaler.transform(x_train)
     return _x_train
 
-def create_model(optimizer='Nadam', layers=9, init_size = 500):
+def create_model(optimizer='Nadam', layers=2, init_size = 5000):
     from keras.models import Sequential
     from keras.layers import Input, Dense, Dropout
     
@@ -227,8 +227,8 @@ def tuning(sample_size = 0):
     # create model
     model = KerasClassifier(build_fn=create_model, epochs=100, batch_size=1000, verbose=0)
     # define the grid search parameters
-    init_size = [ 100, 500, 1000]
-    layers = [3,5,7,9]
+    init_size = [ 1300, 1500, 1800, 2500, 5000]
+    layers = [2]
     param_grid = dict(init_size=init_size, layers=layers)
     grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=1)
     grid_result = grid.fit(x_train, y_train)
@@ -304,14 +304,14 @@ def training(train_size = 0, not_use_weight=False, label='Default'):
         os.makedirs('CheckPoint')
     hist = model.fit(x_train, y_train,
             validation_data = val_tuple,
-            epochs = 100,
+            epochs = 200,
             batch_size = 1280,
             class_weight = class_weight,
             sample_weight = sample_weight,
             callbacks = [ModelCheckpoint(filepath='CheckPoint/CheckPoint{}_{}.h5'.format(train_size,label), verbose = 1, 
                 save_best_only=True), 
-                #ReduceLROnPlateau(patience = 4, factor = 0.5, verbose = 1, min_lr=1e-7), 
-                #EarlyStopping(patience = 10)
+                ReduceLROnPlateau(patience = 4, factor = 0.5, verbose = 1, min_lr=1e-7), 
+                EarlyStopping(patience = 10)
                 ],
             )
 
@@ -344,7 +344,7 @@ def testing(sample_size = 0, label='Default'):
     x_test = scale_dataset(x_test, sample_size)
 
     from keras.models import load_model
-    print ("Loading the model checkpoint: CheckPoint/CheckPoint%d_%s.h5"%(sample_size,label))
+    print ("Loading the model checkpoint: CheckPoint/CheckPoint{}_{}.h5".format(sample_size,label))
     model = load_model('CheckPoint/CheckPoint{}_{}.h5'.format(sample_size, label))
     test_pred = model.predict(x_test)
     train_pred = model.predict(x_train)
@@ -355,14 +355,14 @@ def testing(sample_size = 0, label='Default'):
     test_result.create_dataset("Prediction",data=test_pred)
     test_result.create_dataset("Truth",data=y_test)
     test_result.create_dataset("Weight",data=weight_test)
-    print("Save to TestResult%d_%s.h5"%(sample_size, label))
+    print("Save to TestResult{}_{}.h5".format(sample_size, label))
     test_result.close()
 
     train_result = h5py.File("Result/TrainResult{}_{}.h5".format(sample_size, label),"w")
     train_result.create_dataset("Prediction",data=train_pred)
     train_result.create_dataset("Truth",data=y_train)
     train_result.create_dataset("Weight",data=weight_train)
-    print("Save to TrainResult%d_%s.h5"%(sample_size, label))
+    print("Save to TrainResult{}_{}.h5".format(sample_size, label))
     train_result.close()
 
 if __name__ == "__main__":

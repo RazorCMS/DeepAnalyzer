@@ -143,12 +143,12 @@ def load_dataset(location, load_type = 0, train_size = 0):
     if train_size==0:
         _x = dat[:,2:]
         _y = dat[:,0].astype(int)
-        _weight = dat[:,1]*1e5
+        _weight = dat[:,1] * 1e5
     else:
         print ("Loading sample size {}".format(train_size))
         _x = dat[0:int(train_size),2:]
         _y = dat[0:int(train_size),0]
-        _weight = dat[0:int(train_size),1]*1e5
+        _weight = dat[0:int(train_size),1] * 1e5
     has_nan(_x)
     has_nan(_y)
     has_nan(_weight)
@@ -176,7 +176,7 @@ def scale_dataset(x_train, sample_size=0):
     _x_train = scaler.transform(x_train)
     return _x_train
 
-def create_model(optimizer='Nadam', layers=2, init_size = 5000):
+def create_model(optimizer='adam', layers=3, init_size = 100):
     from keras.models import Sequential
     from keras.layers import Input, Dense, Dropout
     
@@ -188,7 +188,9 @@ def create_model(optimizer='Nadam', layers=2, init_size = 5000):
         if lay==0: 
             model.add(Dense(size, input_shape=(14,), activation='relu'))
         else:
+            model.add(Dropout(0.5))
             model.add(Dense(size, activation='relu'))
+    model.add(Dropout(0.5))
     model.add(Dense(2, activation = 'softmax'))
 
     model.summary()
@@ -197,8 +199,8 @@ def create_model(optimizer='Nadam', layers=2, init_size = 5000):
 
 def tuning(sample_size = 0):
     print ("Tuning the model")
-    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,train_size = sample_size)
-    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1,train_size=sample_size)
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/Undersampling_Dataset.h5",0,train_size = sample_size)
+    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/Undersampling_Dataset.h5",1,train_size=sample_size)
 
     x_train = remove_outlier(x_train)
     x_val = remove_outlier(x_val)
@@ -243,8 +245,8 @@ def tuning(sample_size = 0):
 
 def training(train_size = 0, not_use_weight=False, label='Default'):
     print ("Loading data...")
-    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,train_size = train_size)
-    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",1,train_size=train_size)
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/Undersampling_Dataset.h5",0,train_size = train_size)
+    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/Undersampling_Dataset.h5",1,train_size=train_size)
 
     x_train = remove_outlier(x_train)
     x_val = remove_outlier(x_val)
@@ -304,14 +306,14 @@ def training(train_size = 0, not_use_weight=False, label='Default'):
         os.makedirs('CheckPoint')
     hist = model.fit(x_train, y_train,
             validation_data = val_tuple,
-            epochs = 200,
-            batch_size = 1280,
+            epochs = 500,
+            batch_size = 50,
             class_weight = class_weight,
             sample_weight = sample_weight,
             callbacks = [ModelCheckpoint(filepath='CheckPoint/CheckPoint{}_{}.h5'.format(train_size,label), verbose = 1, 
                 save_best_only=True), 
                 ReduceLROnPlateau(patience = 4, factor = 0.5, verbose = 1, min_lr=1e-7), 
-                EarlyStopping(patience = 10)
+                EarlyStopping(patience = 20)
                 ],
             )
 
@@ -335,11 +337,11 @@ def training(train_size = 0, not_use_weight=False, label='Default'):
 
 def testing(sample_size = 0, label='Default'):
 
-    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",0,train_size = sample_size)
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/Undersampling_Dataset.h5",0,train_size = sample_size)
     x_train = remove_outlier(x_train)
     x_train = scale_dataset(x_train, sample_size)
 
-    x_test, y_test, weight_test = load_dataset(DATA_DIR+"/CombinedDataset_Balanced.h5",2,train_size = sample_size)
+    x_test, y_test, weight_test = load_dataset(DATA_DIR+"/Undersampling_Dataset.h5",2,train_size = sample_size)
     x_test = remove_outlier(x_test)
     x_test = scale_dataset(x_test, sample_size)
 
@@ -354,6 +356,7 @@ def testing(sample_size = 0, label='Default'):
     test_result = h5py.File("Result/TestResult{}_{}.h5".format(sample_size, label),"w")
     test_result.create_dataset("Prediction",data=test_pred)
     test_result.create_dataset("Truth",data=y_test)
+    test_result.create_dataset("Data",data=x_test)
     test_result.create_dataset("Weight",data=weight_test)
     print("Save to TestResult{}_{}.h5".format(sample_size, label))
     test_result.close()
@@ -361,6 +364,7 @@ def testing(sample_size = 0, label='Default'):
     train_result = h5py.File("Result/TrainResult{}_{}.h5".format(sample_size, label),"w")
     train_result.create_dataset("Prediction",data=train_pred)
     train_result.create_dataset("Truth",data=y_train)
+    train_result.create_dataset("Data",data=x_train)
     train_result.create_dataset("Weight",data=weight_train)
     print("Save to TrainResult{}_{}.h5".format(sample_size, label))
     train_result.close()
@@ -383,7 +387,8 @@ if __name__ == "__main__":
 
 
     if args.create:
-        create_dataset()
+        print("Don't try to create the dataset here. Use the DataResampling notebook for the moment")
+        #create_dataset()
     if args.test:
         testing(args.sample, label=args.label)
     elif args.tune:

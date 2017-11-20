@@ -32,7 +32,7 @@ def makeFileLists(inDir, smsName, OneDScan=False):
             print "Skipping non-ROOT file/directory",f
             continue
         splitF = f.replace('.root','').split('_')
-
+        print splitF
         #check sanity
         if len(splitF) < 2:
             print "Unexpected file",f,": skipping"
@@ -144,4 +144,5 @@ def NormalizeSMS():
     print("Removing {}".format(tempList))
     print("Removing {}".format(placeholder))
 
-NormalizeSMS()
+if __name__ == "__main__":
+    NormalizeSMS()

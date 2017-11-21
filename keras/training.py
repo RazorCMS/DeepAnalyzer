@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import h5py
 import pandas as pd 
 import numpy as np
@@ -140,7 +141,7 @@ def has_nan(x, name=''):
         return True
     return False
 
-def load_dataset(location, load_type = 0, train_size = 0):
+def load_dataset(location, load_type = 0, sample_size = 0):
     loadfile = h5py.File(location,"r")
     assert(loadfile)
 
@@ -150,15 +151,15 @@ def load_dataset(location, load_type = 0, train_size = 0):
         else: return "Test"
 
     dat = loadfile[decode(load_type)]
-    if train_size==0:
+    if sample_size==0:
         _x = dat[:,2:]
         _y = dat[:,0].astype(int)
         _weight = dat[:,1] * 1e5
     else:
-        print ("Loading sample size {}".format(train_size))
-        _x = dat[0:int(train_size),2:]
-        _y = dat[0:int(train_size),0]
-        _weight = dat[0:int(train_size),1] * 1e5
+        print ("Loading sample size {}".format(sample_size))
+        _x = dat[0:int(sample_size),2:]
+        _y = dat[0:int(sample_size),0]
+        _weight = dat[0:int(sample_size),1] * 1e5
     has_nan(_x)
     has_nan(_y)
     has_nan(_weight)
@@ -172,16 +173,18 @@ def get_class_weight(label):
     print ("class_weight: {}".format(class_weight))
     return class_weight
 
-def scale_fit(x_train, sample_size=0):
+def scale_fit(x_train, sample_size=0, scalerfile = None):
     scaler = preprocessing.MinMaxScaler(feature_range=(0, 1)).fit(x_train)
-    if not os.path.isdir('Scaler'):
-        os.makedirs('Scaler')
-    scaler_file = "Scaler/scaler_{}.pkl".format(sample_size)
+    if scalerfile == None: scaler_file = "Scaler/scaler_{}.pkl".format(sample_size)
+    else: scaler_file = scalerfile
     joblib.dump(scaler, scaler_file)
     print ("Saving scaler information to {}".format(scaler_file))
 
-def scale_dataset(x_train, sample_size=0):
-    scaler_file = "Scaler/scaler_{}.pkl".format(sample_size)
+def scale_dataset(x_train, sample_size=0, scalerfile=None):
+    if scalerfile == None: scaler_file = "Scaler/scaler_{}.pkl".format(sample_size)
+    else:
+        scaler_file = scalerfile
+    print("Loading scaler information from {}".format(scaler_file))
     scaler = joblib.load(scaler_file)
     _x_train = scaler.transform(x_train)
     return _x_train
@@ -196,7 +199,7 @@ def create_model(optimizer='adam', layers=3, init_size = 100, remove=None):
         size = int(init_size/2**lay)
         if size < 5: break
         if lay==0: 
-            if remove is None:
+            if remove == None:
                 model.add(Dense(size, input_shape=(14,), activation='relu'))
             else:
                 model.add(Dense(size, input_shape=(13,), activation='relu'))
@@ -212,8 +215,8 @@ def create_model(optimizer='adam', layers=3, init_size = 100, remove=None):
 
 def tuning(sample_size = 0):
     print ("Tuning the model")
-    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/Undersampling_Dataset_850_800.h5",0,train_size = sample_size)
-    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/Undersampling_Dataset_850_800.h5",1,train_size=sample_size)
+    x_train, y_train, weight_train = load_dataset(DATA_DIR+"/Undersampling_Dataset_850_800.h5",0,sample_size = sample_size)
+    x_val, y_val, weight_val = load_dataset(DATA_DIR+"/Undersampling_Dataset_850_800.h5",1,sample_size=sample_size)
 
     #x_train = remove_outlier(x_train)
     #x_val = remove_outlier(x_val)
@@ -256,7 +259,7 @@ def tuning(sample_size = 0):
             print("%f (%f) with: %r" % (mean, stdev, param))
 
 
-def training(train_size = 0, not_use_weight=False, label='Default', remove=None):
+def training(sample_size = 0, not_use_weight=False, label='Default', remove=None):
     print ("Loading data...")
     if not os.path.isdir('CheckPoint/FeatureRemoval'):
         os.makedirs('CheckPoint/FeatureRemoval')
@@ -266,26 +269,30 @@ def training(train_size = 0, not_use_weight=False, label='Default', remove=None)
         os.makedirs('History/FeatureRemoval')
     if not os.path.isdir('Result/FeatureRemoval'):
         os.makedirs('Result/FeatureRemoval')
+    if not os.path.isdir('Scaler/FeatureRemoval'):
+        os.makedirs('Scaler/FeatureRemoval')
 
-    if remove is None:
+    if remove == None:
         DataLocation = DATA_DIR+"/Undersampling_Dataset_850_800.h5"
-        ScaleInputTrain = "ScaledInput/TrainingDataset{}.h5".format(train_size)
-        ScaleInputVal = "ScaledInput/ValidationDataset{}.h5".format(train_size)
-        CheckPoint = 'CheckPoint/CheckPoint{}_{}.h5'.format(train_size,label)
-        histfile = 'History/history{}_{}.sav'.format(train_size, label)
-        ValidationLocation = "Result/ValidationResult{size}_{label}.h5".format(size=train_size, label=label)
+        ScaleInputTrain = "ScaledInput/TrainingDataset{}.h5".format(sample_size)
+        ScaleInputVal = "ScaledInput/ValidationDataset{}.h5".format(sample_size)
+        CheckPoint = 'CheckPoint/CheckPoint{}_{}.h5'.format(sample_size,label)
+        histfile = 'History/history{}_{}.sav'.format(sample_size, label)
+        ValidationLocation = "Result/ValidationResult{size}_{label}.h5".format(size=sample_size, label=label)
+        scaler_file = "Scaler/scaler_{}.pkl".format(sample_size)
     else:
         print("{} removed".format(remove))
         DataLocation = DATA_DIR+"/FeatureRemoval/Undersampling_Dataset_No_{}.h5".format(remove)
-        ScaleInputTrain = "ScaledInput/FeatureRemoval/TrainingDataset{}_No_{}.h5".format(train_size,remove)
-        ScaleInputVal = "ScaledInput/FeatureRemoval/ValidationDataset{}_No_{}.h5".format(train_size,remove)
-        CheckPoint = 'CheckPoint/FeatureRemoval/CheckPoint{}_{}_No_{}.h5'.format(train_size,label,remove)
-        histfile = 'History/FeatureRemoval/history{}_{}_No_{}.sav'.format(train_size, label, remove)
-        ValidationLocation = "Result/FeatureRemoval/ValidationResult{size}_{label}_{remove}.h5".format(size=train_size, label=label, remove=remove)
+        ScaleInputTrain = "ScaledInput/FeatureRemoval/TrainingDataset{}_No_{}.h5".format(sample_size,remove)
+        ScaleInputVal = "ScaledInput/FeatureRemoval/ValidationDataset{}_No_{}.h5".format(sample_size,remove)
+        CheckPoint = 'CheckPoint/FeatureRemoval/CheckPoint{}_{}_No_{}.h5'.format(sample_size,label,remove)
+        histfile = 'History/FeatureRemoval/history{}_{}_No_{}.sav'.format(sample_size, label, remove)
+        ValidationLocation = "Result/FeatureRemoval/ValidationResult{size}_{label}_No_{remove}.h5".format(size=sample_size, label=label, remove=remove)
+        scaler_file = "Scaler/FeatureRemoval/scaler_{}_No_{}.pkl".format(sample_size, remove)
     
     
-    x_train, y_train, weight_train = load_dataset(DataLocation,0,train_size = train_size)
-    x_val, y_val, weight_val = load_dataset(DataLocation,1,train_size=train_size)
+    x_train, y_train, weight_train = load_dataset(DataLocation,0,sample_size = sample_size)
+    x_val, y_val, weight_val = load_dataset(DataLocation,1,sample_size=sample_size)
         
     #x_train = remove_outlier(x_train)
     #x_val = remove_outlier(x_val)
@@ -300,9 +307,9 @@ def training(train_size = 0, not_use_weight=False, label='Default', remove=None)
     has_nan(x_train, "unscaled training")
     if not np.isfinite(x_train).all():
         print ("Unscaled training probably contains inf")
-    scale_fit(x_train, train_size)
-    x_train = scale_dataset(x_train, train_size)
-    x_val = scale_dataset(x_val, train_size)
+    scale_fit(x_train, sample_size, scaler_file)
+    x_train = scale_dataset(x_train, sample_size, scaler_file)
+    x_val = scale_dataset(x_val, sample_size, scaler_file)
     has_nan(x_train, "scaled training")
     has_nan(y_val, "scaled validation")
 
@@ -363,25 +370,31 @@ def training(train_size = 0, not_use_weight=False, label='Default', remove=None)
     val_result.close()
 
 def testing(sample_size = 0, label='Default', remove=None):
-    if remove is None:
+    if remove == None:
         DataLocation = DATA_DIR+"/Undersampling_Dataset_850_800.h5"
+        ScaleInputTrain = "ScaledInput/TrainingDataset{}.h5".format(sample_size)
+        ScaleInputVal = "ScaledInput/ValidationDataset{}.h5".format(sample_size)
         CheckPoint = 'CheckPoint/CheckPoint{}_{}.h5'.format(sample_size,label)
         TestLocation = "Result/TestResult{size}_{label}.h5".format(size=sample_size, label=label)
         TrainLocation = "Result/TrainResult{size}_{label}.h5".format(size=sample_size, label=label)
+        scaler_file = "Scaler/scaler_{}.pkl".format(sample_size)
     else:
         print("{} removed".format(remove))
         DataLocation = DATA_DIR+"/FeatureRemoval/Undersampling_Dataset_No_{}.h5".format(remove)
         CheckPoint = 'CheckPoint/FeatureRemoval/CheckPoint{}_{}_No_{}.h5'.format(sample_size,label,remove)
+        ScaleInputTrain = "ScaledInput/FeatureRemoval/TrainingDataset{}_No_{}.h5".format(sample_size,remove)
+        ScaleInputVal = "ScaledInput/FeatureRemoval/ValidationDataset{}_No_{}.h5".format(sample_size,remove)
         TestLocation = "Result/FeatureRemoval/TestResult{size}_{label}_{remove}.h5".format(size=sample_size, label=label, remove=remove)
         TrainLocation = "Result/FeatureRemoval/TrainResult{size}_{label}_{remove}.h5".format(size=sample_size, label=label, remove=remove)
+        scaler_file = "Scaler/FeatureRemoval/scaler_{}_No_{}.pkl".format(sample_size, remove)
     
-    x_train, y_train, weight_train = load_dataset(DataLocation,0,train_size = sample_size)
+    x_train, y_train, weight_train = load_dataset(DataLocation,0,sample_size = sample_size)
     #x_train = remove_outlier(x_train)
-    x_train = scale_dataset(x_train, sample_size)
+    x_train = scale_dataset(x_train, sample_size, scaler_file)
 
-    x_test, y_test, weight_test = load_dataset(DataLocation,2,train_size = sample_size)
+    x_test, y_test, weight_test = load_dataset(DataLocation,2,sample_size = sample_size)
     #x_test = remove_outlier(x_test)
-    x_test = scale_dataset(x_test, sample_size)
+    x_test = scale_dataset(x_test, sample_size, scaler_file)
 
     from keras.models import load_model
     print ("Loading the model checkpoint: {}".format(CheckPoint))
@@ -431,7 +444,7 @@ if __name__ == "__main__":
         sys.exit("Don't try to create the dataset here. Use the DataResampling notebook for the moment")
         #create_dataset()
     if args.test:
-        testing(args.sample, label=args.label)
+        testing(args.sample, label=args.label, remove=args.remove)
     elif args.tune:
         tuning(args.sample)
     else:

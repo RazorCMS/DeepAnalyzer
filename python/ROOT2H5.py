@@ -120,8 +120,8 @@ def convert(tree, sample=''):
     else:
         label = np.zeros(shape=(feature.shape), dtype = [('label','f4')])
         print ("Feature shape = {}".format(feature.shape))
-        rand_ms = np.random.randint(0, 2000, size=(feature.shape))
-        rand_ml = np.random.randint(0, 1000, size=(feature.shape))
+        rand_ms = np.random.randint(300, 2000, size=(feature.shape))
+        rand_ml = np.random.randint(0, 1500, size=(feature.shape))
         ms = np.zeros(shape=(feature.shape), dtype = [('mSquark','f4')])
         ms['mSquark'] = rand_ms
         ml = np.zeros(shape=(feature.shape), dtype = [('mLSP','f4')])

@@ -120,13 +120,11 @@ def convert(tree, sample=''):
     else:
         label = np.zeros(shape=(feature.shape), dtype = [('label','f4')])
         print ("Feature shape = {}".format(feature.shape))
-        rand_ms = np.random.randint(300, 2000, size=(feature.shape))
-        rand_ml = np.random.randint(0, 1500, size=(feature.shape))
         ms = np.zeros(shape=(feature.shape), dtype = [('mSquark','f4')])
-        ms['mSquark'] = rand_ms
+        ms['mSquark'] = np.random.randint(300, 1800, size=(feature.shape))
         ml = np.zeros(shape=(feature.shape), dtype = [('mLSP','f4')])
-        ml['mLSP'] = rand_ml
-
+        ml['mLSP'] = np.random.randint(0, 1400, size=(feature.shape))
+       
     data = nlr.merge_arrays([label,feature,ms,ml], flatten=True) 
     print("{} selected events converted to h5py".format(data.shape[0]))
     return data
@@ -145,6 +143,7 @@ parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('-s','--sample', help='Sample to process (WJets, TTJets, Signal, etc.)', choices=['WJets','TTJets','Other','QCD','DYJets','SingleTop','ZInv','Signal'])
 group.add_argument('-a','--all', action='store_true', help='Run all samples')
+group.add_argument('-b','--background', action='store_true', help='Run all background')
 parser.add_argument('-t','--test', action='store_true', help='Run a very small test sample')
 
 args = parser.parse_args()
@@ -159,6 +158,11 @@ if args.all: #
     print("Processing all files...")
     for sample in SAMPLES:
         saveh5(sample, loca)
+elif args.background:
+    print("Processing all backgrounds...")
+    for sample in SAMPLES:
+        if "T2qq" not in sample:
+            saveh5(sample, loca)
 elif "Signal" in args.sample:
     print("Processing Signal only...")
     for sample in SAMPLES:

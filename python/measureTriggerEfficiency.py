@@ -25,7 +25,19 @@ HistList['MR'] = initHist('MR', 0, 1000)
 HistList['MT2'] = initHist('MT2', 0, 500)
 HistList['Rsq'] = initHist('Rsq', 0, 1.0)
 HistList['subleadingJetPt'] = initHist('subleadingJetPt', 0, 400)
-    
+
+Threshold = {}
+Threshold['alphaT'] = 0
+Threshold['HT'] = 100
+Threshold['jet1MT'] = 200
+Threshold['leadingJetPt'] = 100
+Threshold['MET'] = 100
+Threshold['MHT'] = 100
+Threshold['MR'] = 100
+Threshold['MT2'] = 100
+Threshold['Rsq'] = 0.1
+Threshold['subleadingJetPt'] = 0
+
 DenominatorTrigger = TriggerManager('SingleLepton')
 MT2Trigger = TriggerManager('MT2')
 MHTTrigger = TriggerManager('MHT')
@@ -37,17 +49,23 @@ print ("NEntries = {}".format(entries))
 for i in range(entries):
     mytree.GetEntry(i)
     if (i%10000==0): print ("Get entry {}/{}".format(i, entries))
-    if mytree.MET > 100 and mytree.MHT > 100 and abs(mytree.leadingJetEta) < 2.5 and mytree.nBJetsMedium == 0: # Baseline selection
+    if abs(mytree.leadingJetEta) < 2.5 and mytree.nBJetsMedium == 0: # Baseline selection
         cmd = 'if {}: '.format(DenominatorTrigger.appendTriggerCuts(treeName='mytree'))
-        cmd += '\n    passSel = {} or {} or {}'.format(MT2Trigger.appendTriggerCuts(treeName='mytree'), MHTTrigger.appendTriggerCuts(treeName='mytree'), RazorTrigger.appendTriggerCuts(treeName='mytree'))
         for feature in list(HistList):
-            cmd += '\n    HistList[\'{}\'].Fill(passSel, mytree.{})'.format(feature, feature)
+            cmd += '\n    if '
+            first = True
+            for threshold in list(Threshold):
+                if feature != threshold:
+                    if not first: cmd += ' and '
+                    cmd += 'myTree.{} > {}'.format(threshold, Threshold[threshold]) 
+                    first = False
+            cmd += ':\n         passSel = {} or {} or {}'.format(MT2Trigger.appendTriggerCuts(treeName='mytree'), MHTTrigger.appendTriggerCuts(treeName='mytree'), RazorTrigger.appendTriggerCuts(treeName='mytree'))
+            cmd += '\n         HistList[\'{}\'].Fill(passSel, mytree.{})'.format(feature, feature)
 
         exec (cmd)
-
 rt.gStyle.SetOptStat(0)   
 c1 = rt.TCanvas("c1","",600,600)
-if not os.path.isdir('TriggerPlots'): os.makedirs('TriggerPlots')
+if not os.path.isdir('TriggerPlots_wCuts'): os.makedirs('TriggerPlots_wCuts')
 for feature in list(HistList):
     HistList[feature].Draw("AP")
-    c1.SaveAs("TriggerPlots/{}.png".format(feature))
+    c1.SaveAs("TriggerPlots_wCuts/{}.png".format(feature))

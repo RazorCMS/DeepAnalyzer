@@ -52,7 +52,7 @@ print ("NEntries = {}".format(entries))
 for i in range(entries/10):
     mytree.GetEntry(i)
     if (i%10000==0): 
-        print ("Get entry {}/{} ({0:.2f}% -- Time used: {0:.0f}s)".format(i, entries, float(i)/float(entries)*100, time.time()-start_time))
+        print ("Get entry {0}/{1} ({2:.2f}% -- Time used: {3:.1f}s)".format(i, entries, float(i)/float(entries)*100, time.time()-start_time))
 
     if abs(mytree.leadingJetEta) < 2.5 and mytree.nBJetsMedium == 0: # Baseline selection
         cmd = 'if {}: '.format(DenominatorTrigger.appendTriggerCuts(treeName='mytree'))

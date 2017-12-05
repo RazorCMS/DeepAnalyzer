@@ -9,10 +9,10 @@ from normalizeFastsimSMS import makeFileLists
 
 SIGNAL_DIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/SignalFastsim/weighted/'
 BACKGROUND_DIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/Signal/'
-SAVEDIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/h5/'
-if not os.path.isdir(SAVEDIR): os.makedirs(SAVEDIR)
 
-CUT = 'leadingJetPt>100 && MET>100 && MHT>100 && (box==21 || box==22)'
+# box: MultiJet = 21, MonoJet = 22
+CUT_MONO = 'leadingJetPt>100 && MET>100 && MHT>100 && nBTaggedJets == 0 && box==22 && (subleadingJetPt<60 || nSelectedJets == 1)'
+CUT_MULTI = 'leadingJetPt>100 && MET>100 && MHT>100 && nBTaggedJets == 0 && box==21 && subleadingJetPt>60'
 
 def makeFileLists(inDir, smsName, OneDScan=False):
     """
@@ -106,7 +106,14 @@ SAMPLES['ZInv']['test'] = BACKGROUND_DIR+"/jobs/InclusiveSignalRegion_Razor2016_
 for signal in SignalDict:
     SAMPLES['T2qq_{}_{}'.format(signal[0],signal[1])]['test'] = SIGNAL_DIR+SignalDict[signal][0]
 
-def convert(tree, sample=''):
+def convert(tree, sample='', box=1):
+    if box==1:
+        print("Using monojet box with selection: {}".format(CUT_MONO))
+        CUT = CUT_MONO
+    else:
+        print("Using multijet box with selection: {}".format(CUT_MULTI))
+        CUT = CUT_MULTI
+
     print("Transforming {} events from {}".format(tree.GetEntries(), sample))
     feature = tree2array(tree,
             branches = ['weight','alphaT','dPhiMinJetMET','dPhiRazor','HT','jet1MT','leadingJetCISV','leadingJetPt','MET','MHT','MR','MT2','nSelectedJets','Rsq','subleadingJetPt'],
@@ -129,12 +136,20 @@ def convert(tree, sample=''):
     print("{} selected events converted to h5py".format(data.shape[0]))
     return data
 
-def saveh5(sample,loca):
+def saveh5(sample,loca,box=1):
+    SAVEDIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/h5/'
+    if box == 1:
+        SAVEDIR += '/Mono/'
+    else:
+        SAVEDIR += '/Multi/'
+    if not os.path.isdir(SAVEDIR):
+        os.makedirs(SAVEDIR)
+
     print(SAVEDIR+'/'+sample+'.h5')
     outh5 = h5py.File(SAVEDIR+'/'+sample+'.h5','w')
     _file = rt.TFile.Open(SAMPLES[sample][loca])
     _tree = _file.Get('InclusiveSignalRegion')
-    outh5['Data'] = convert(_tree, sample)
+    outh5['Data'] = convert(_tree, sample, box)
     outh5.close()
     _file.Close()
     print("Save to {}".format(SAVEDIR+'/'+sample+'.h5'))
@@ -145,6 +160,8 @@ group.add_argument('-s','--sample', help='Sample to process (WJets, TTJets, Sign
 group.add_argument('-a','--all', action='store_true', help='Run all samples')
 group.add_argument('-b','--background', action='store_true', help='Run all background')
 parser.add_argument('-t','--test', action='store_true', help='Run a very small test sample')
+parser.add_argument('--box', type=int, default=1, help='1: Monojet box. Else: Multijet box.')
+
 
 args = parser.parse_args()
 
@@ -157,18 +174,18 @@ else:
 if args.all: # 
     print("Processing all files...")
     for sample in SAMPLES:
-        saveh5(sample, loca)
+        saveh5(sample, loca, args.box)
 elif args.background:
     print("Processing all backgrounds...")
     for sample in SAMPLES:
         if "T2qq" not in sample:
-            saveh5(sample, loca)
+            saveh5(sample, loca, args.box)
 elif "Signal" in args.sample:
     print("Processing Signal only...")
     for sample in SAMPLES:
         if "T2qq" in sample:
-            saveh5(sample, loca)
+            saveh5(sample, loca, args.box)
 else:
     print("Processing {}...".format(args.sample)) 
-    saveh5(args.sample, loca)
+    saveh5(args.sample, loca, args.box)
 

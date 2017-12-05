@@ -57,7 +57,7 @@ for i in range(entries):
             for threshold in list(Threshold):
                 if feature != threshold:
                     if not first: cmd += ' and '
-                    cmd += 'myTree.{} > {}'.format(threshold, Threshold[threshold]) 
+                    cmd += 'mytree.{} > {}'.format(threshold, Threshold[threshold]) 
                     first = False
             cmd += ':\n         passSel = {} or {} or {}'.format(MT2Trigger.appendTriggerCuts(treeName='mytree'), MHTTrigger.appendTriggerCuts(treeName='mytree'), RazorTrigger.appendTriggerCuts(treeName='mytree'))
             cmd += '\n         HistList[\'{}\'].Fill(passSel, mytree.{})'.format(feature, feature)

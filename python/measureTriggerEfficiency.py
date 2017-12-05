@@ -18,13 +18,13 @@ HistList = {}
 HistList['alphaT'] = initHist('alphaT', 0, 1.2)
 HistList['HT'] = initHist('HT', 0, 1400)
 HistList['jet1MT'] = initHist('jet1MT', 0, 800)
-HistList['leadingJetPt'] = initHist('leadingJetPt', 0, 200)
+HistList['leadingJetPt'] = initHist('leadingJetPt', 0, 800)
 HistList['MET'] = initHist('MET', 0, 800)
 HistList['MHT'] = initHist('MHT', 0, 800)
 HistList['MR'] = initHist('MR', 0, 1000)
 HistList['MT2'] = initHist('MT2', 0, 500)
 HistList['Rsq'] = initHist('Rsq', 0, 1.0)
-HistList['subleadingJetPt'] = initHist('subleadingJetPt', 0, 400)
+HistList['subleadingJetPt'] = initHist('subleadingJetPt', 0, 600)
 
 Threshold = {}
 Threshold['alphaT'] = 0
@@ -46,7 +46,7 @@ RazorTrigger = TriggerManager('Razor')
 entries = mytree.GetEntries()
 print ("NEntries = {}".format(entries))
 
-for i in range(entries):
+for i in range(entries/10):
     mytree.GetEntry(i)
     if (i%10000==0): print ("Get entry {}/{}".format(i, entries))
     if abs(mytree.leadingJetEta) < 2.5 and mytree.nBJetsMedium == 0: # Baseline selection
@@ -65,7 +65,8 @@ for i in range(entries):
         exec (cmd)
 rt.gStyle.SetOptStat(0)   
 c1 = rt.TCanvas("c1","",600,600)
-if not os.path.isdir('TriggerPlots_wCuts'): os.makedirs('TriggerPlots_wCuts')
+SaveDir = 'TriggerPlots_wCuts'
+if not os.path.isdir(SaveDir): os.makedirs(SaveDir)
 for feature in list(HistList):
     HistList[feature].Draw("AP")
-    c1.SaveAs("TriggerPlots_wCuts/{}.png".format(feature))
+    c1.SaveAs("{}/{}.png".format(SaveDir,feature))

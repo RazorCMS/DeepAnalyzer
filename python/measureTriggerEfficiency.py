@@ -48,8 +48,10 @@ RazorTrigger = TriggerManager('Razor')
 
 entries = mytree.GetEntries()
 print ("NEntries = {}".format(entries))
+entries /= 10 # For fast testing
+print ("Running on {} events".format(entries))
 
-for i in range(entries/10):
+for i in range(entries):
     mytree.GetEntry(i)
     if (i%10000==0): 
         print ("Get entry {0}/{1} ({2:.2f}% -- Time used: {3:.1f}s)".format(i, entries, float(i)/float(entries)*100, time.time()-start_time))

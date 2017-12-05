@@ -101,7 +101,19 @@ ZJetsToNuNu_HT-600To800_13TeV-madgraph                                          
 ZJetsToNuNu_HT-800To1200_13TeV-madgraph                                             1.1796*1.23 
 ZJetsToNuNu_HT-1200To2500_13TeV-madgraph                                            0.28833*1.23
 ZJetsToNuNu_HT-2500ToInf_13TeV-madgraph                                             0.006945*1.23
-DYJetsToNuNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                             3811.0
+DYJetsToNuNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                             3811.0*3
+DYJetsToNuNu_Zpt-0To50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                   3483.0*3
+DYJetsToNuNu_PtZ-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                  237.2*3
+DYJetsToNuNu_PtZ-100To250_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                  55.03*3
+DYJetsToNuNu_PtZ-250To400_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                   2.082*3
+DYJetsToNuNu_PtZ-400To650_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                   0.2816*3
+DYJetsToNuNu_PtZ-650ToInf_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                   0.02639*3
+DYJetsToLL_Zpt-0To50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                     5451.0
+DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                     354.8
+DYJetsToLL_Pt-100To250_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                     81.22
+DYJetsToLL_Pt-250To400_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                      2.991
+DYJetsToLL_Pt-400To650_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                      0.3882
+DYJetsToLL_Pt-650ToInf_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8                      0.03737
 TTJets_HT-600to800_TuneCUETP8M1_13TeV-madgraphMLM-pythia8                           1.61
 TTJets_HT-800to1200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8                          0.663
 TTJets_HT-1200to2500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8                         0.12
@@ -115,6 +127,8 @@ TTJets_DiLept_TuneCUETP8M1_13TeV-madgraphMLM-pythia8                            
 TTJets_SingleLeptFromT_TuneCUETP8M2T4_13TeV-amcatnloFXFX-pythia8                  146.34
 TTJets_SingleLeptFromTbar_TuneCUETP8M2T4_13TeV-amcatnloFXFX-pythia8               146.34
 TTJets_Dilept_TuneCUETP8M2T4_13TeV-amcatnloFXFX-pythia8                            70.14
+TTTo2L2Nu_TuneCUETP8M2_ttHtranche3_13TeV-powheg-pythia8                            87.31 
+TTToSemilepton_TuneCUETP8M2_ttHtranche3_13TeV-powheg-pythia8                      320.1
 ST_s-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1                    3.36
 ST_t-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1                   70.69
 ST_t-channel_4f_scaledown_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1         70.69
@@ -153,6 +167,7 @@ WWJJToLNuQQ_LT_13TeV-madgraph-pythia8                                           
 WWW_4F_TuneCUETP8M1_13TeV-amcatnlo-pythia8                                          0.2086
 WZZ_TuneCUETP8M1_13TeV-amcatnlo-pythia8                                             0.05565
 WWZ_TuneCUETP8M1_13TeV-amcatnlo-pythia8                                             0.1651
+WWZJetsTo4L2Nu_4f_TuneCUETP8M1_13TeV_aMCatNLOFxFx_pythia8                           0.1651*0.003179651616
 ZZZ_TuneCUETP8M1_13TeV-amcatnlo-pythia8                                             0.01398
 TTTT_TuneCUETP8M1_13TeV-amcatnlo-pythia8                                            0.009103
 ttZJets_13TeV_madgraphMLM                                                           0.659
@@ -276,6 +291,9 @@ ZH_HToGG_ZToAll_M125_13TeV_powheg_pythia8               0.8839*2.27e-03
 WplusH_HToGG_WToAll_M125_13TeV_powheg_pythia8 		0.8400*2.27e-03 
 WminusH_HToGG_WToAll_M125_13TeV_powheg_pythia8          0.5328*2.27e-03
 
+
+					
+
 #FastSim SMS
 SMS-TChiHH_127_HToGG                                    7.6022*2*2.27e-03	 
 SMS-TChiHH_150_HToGG                                    3.83231*2*2.27e-03	 
@@ -398,27 +416,71 @@ SMS-TChiWH_BRToH50_650_HToGG                            0.5*0.0137303*2.27e-03
 SMS-TChiWH_BRToH50_675_HToGG                            0.5*0.0113975*2.27e-03
 SMS-TChiWH_BRToH50_700_HToGG                            0.5*0.00951032*2.27e-03
 
-SMS-T2qq_300_275                                        85.6773
-SMS-T2qq_1000_975                                       0.0624391
-SMS-T2qq_1050_1025                                      0.0439731
-SMS-T2qq_1100_1075                                      0.0313372
-SMS-T2qq_1150_1125                                      0.0224935
-SMS-T2qq_1200_1175                                      0.0162846
-SMS-T2qq_1250_1225                                      0.0118571
-SMS-T2qq_1300_1275                                      0.0086557
-SMS-T2qq_1350_1325                                      0.00637816
-SMS-T2qq_1400_1375                                      0.00329856
-SMS-T2qq_350_325                                        37.9377
-SMS-T2qq_400_375                                        18.4856
-SMS-T2qq_450_425                                        9.57232
-SMS-T2qq_500_475                                        5.24259
-SMS-T2qq_550_525                                        2.9864
-SMS-T2qq_600_575                                        1.76645
-SMS-T2qq_650_625                                        1.08047
-SMS-T2qq_700_675                                        0.677259
-SMS-T2qq_750_725                                        0.437009
-SMS-T2qq_800_775                                        0.288396
-SMS-T2qq_850_825                                        0.192979
-SMS-T2qq_900_875                                        0.130931
-SMS-T2qq_950_925                                        0.0898112
 
+# Bacon
+QCD_HT100to200_13TeV 27500000
+QCD_HT200to300_13TeV 1735000
+QCD_HT300to500_13TeV 367000
+QCD_HT500to700_13TeV 29370
+QCD_HT700to1000_13TeV  6524
+QCD_HT1000to1500_13TeV 1064
+QCD_HT1500to2000_13TeV 121.5
+QCD_HT2000toInf_13TeV  25.42
+WJetsToLNu_HT_100To200_13TeV  1343
+WJetsToLNu_HT_200To400_13TeV 359.6
+WJetsToLNu_HT_400To600_13TeV 48.85  
+WJetsToLNu_HT_600To800_13TeV 12.05
+WJetsToLNu_HT_800To1200_13TeV 5.501
+WJetsToLNu_HT_1200To2500_13TeV 1.329
+WJetsToLNu_HT_2500ToInf_13TeV  0.03216
+  
+DYJetsToLL_M_50_HT_100to200_13TeV 148.0
+DYJetsToLL_M_50_HT_200to400_13TeV 40.94
+DYJetsToLL_M_50_HT_400to600_13TeV 5.497
+DYJetsToLL_M_50_HT_600toInf_13TeV 2.193
+DYJetsToLL_M_50_HT_100to200_13TeV 148.0
+DYJetsToLL_M_50_HT_200to400_13TeV 40.94
+DYJetsToLL_M_50_HT_400to600_13TeV 5.497
+DYJetsToLL_M_50_HT_600toInf_13TeV 2.193
+
+ZJetsToNuNu_HT_100To200_13TeV_madgraph 280.5
+ZJetsToNuNu_HT_200To400_13TeV_madgraph 77.7
+ZJetsToNuNu_HT_400To600_13TeV_madgraph  10.71
+ZJetsToNuNu_HT_600ToInf_13TeV_madgraph  4.098
+ZJetsToNuNu_HT_600To800_13TeV_madgraph  2.559
+ZJetsToNuNu_HT_800To1200_13TeV_madgraph 1.1826
+ZJetsToNuNu_HT_1200To2500_13TeV_madgraph  0.2922
+ZJetsToNuNu_HT_2500ToInf_13TeV_madgraph 0.0069
+
+ST_t-channel_antitop_4f_inclusiveDecays_13TeV_powheg  44.0802
+ST_t-channel_top_4f_inclusiveDecays_13TeV_powheg  26.2343
+ST_tW_antitop_5f_inclusiveDecays_13TeV 35.6
+ST_tW_top_5f_inclusiveDecays_13TeV 35.6
+
+TTJets_13TeV_powheg 831.76
+TTJets_13TeV_amcatnloFXFX_pythia8 831.76
+TT_13TeV_powheg 831.76
+TT_13TeV_powheg_pythia8 831.76
+
+WW_13TeV_pythia8 118.7 
+WZ_13TeV 47.2 
+WZ_13TeV_pythia8 47.2 
+ZZ_13TeV 31.8 
+ZZ_13TeV_pythia8 31.8 
+WWTo1L1Nu2Q_13TeV_amcatnlo 0 
+WWTo4Q_13TeV_amcatnlo 51.723 
+WWToLNuQQ_13TeV_powheg 49.997
+WZTo1L1Nu2Q_13TeV_amcatnlo 10.71
+WZTo1L3Nu_13TeV_amcatnlo 3.03
+WZTo2L2Q_13TeV_amcatnlo 5.595
+WZTo3LNu_13TeV_amcatnlo 4.42965
+ZZTo2L2Nu_13TeV_powheg 0.564 
+ZZTo2L2Q_13TeV_amcatnlo 3.22
+ZZTo2Q2Nu_13TeV_amcatnlo 4.04
+ZZTo4L_13TeV_powheg 1.212
+ZZTo4Q_13TeV_amcatnlo 6.842
+
+GJets_HT_100To200_13TeV  9235
+GJets_HT_200To400_13TeV  2298
+GJets_HT_400To600_13TeV 277.6
+GJets_HT_600ToInf_13TeV 93.47

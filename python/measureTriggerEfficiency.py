@@ -2,6 +2,9 @@ import ROOT as rt
 from argparse import ArgumentParser
 import os
 from utils.TriggerManager import TriggerManager
+import time
+
+start_time = time.time()
 
 rt.gROOT.SetBatch()
 
@@ -48,7 +51,9 @@ print ("NEntries = {}".format(entries))
 
 for i in range(entries/10):
     mytree.GetEntry(i)
-    if (i%10000==0): print ("Get entry {}/{}".format(i, entries))
+    if (i%10000==0): 
+        print ("Get entry {}/{} ({0:.2f}% -- Time used: {0:.0f}s)".format(i, entries, float(i)/float(entries)*100, time.time()-start_time))
+
     if abs(mytree.leadingJetEta) < 2.5 and mytree.nBJetsMedium == 0: # Baseline selection
         cmd = 'if {}: '.format(DenominatorTrigger.appendTriggerCuts(treeName='mytree'))
         for feature in list(HistList):
@@ -65,7 +70,7 @@ for i in range(entries/10):
         exec (cmd)
 rt.gStyle.SetOptStat(0)   
 c1 = rt.TCanvas("c1","",600,600)
-SaveDir = 'TriggerPlots_wCuts'
+SaveDir = 'TriggerPlots_Fast'
 if not os.path.isdir(SaveDir): os.makedirs(SaveDir)
 for feature in list(HistList):
     HistList[feature].Draw("AP")

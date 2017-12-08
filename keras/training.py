@@ -10,10 +10,7 @@ import argparse
 import os
 import sys
 
-DATA_DIR = '/bigdata/shared/analysis/Parameterized/'
-FEATURES = ['alphaT', 'dPhiMinJetMET', 'dPhiRazor', 'HT', 'jet1MT', 'leadingJetCISV', 'leadingJetPt', 'MET', 'MHT', 'MR', 'MT2', 'nSelectedJets', 'Rsq', 'subleadingJetPt']
-
-#DATA_DIR = '/home/ubuntu/data/'
+plt.switch_backend('agg') # Non-interactive
 
 # Convert to regular numpy arrays
 def to_regular_array(struct_array):
@@ -189,7 +186,7 @@ def scale_dataset(x_train, sample_size=0, scalerfile=None):
     _x_train = scaler.transform(x_train)
     return _x_train
 
-def create_model(optimizer='adam', layers=3, init_size = 100, remove=None):
+def create_model(optimizer='adam', layers=3, init_size = 1000, remove=None):
     from keras.models import Sequential
     from keras.layers import Input, Dense, Dropout
     
@@ -204,9 +201,9 @@ def create_model(optimizer='adam', layers=3, init_size = 100, remove=None):
             else:
                 model.add(Dense(size, input_shape=(13,), activation='relu'))
         else:
-            model.add(Dropout(0.5))
+            #model.add(Dropout(0.5))
             model.add(Dense(size, activation='relu'))
-    model.add(Dropout(0.5))
+    #model.add(Dropout(0.5))
     model.add(Dense(2, activation = 'softmax'))
 
     model.summary()
@@ -274,12 +271,12 @@ def training(sample_size = 0, not_use_weight=False, label='Default', remove=None
 
     if remove == None:
         DataLocation = DATA_DIR+"/Parameterized_Dataset.h5"
-        ScaleInputTrain = "ScaledInput/TrainingDataset{}.h5".format(sample_size)
-        ScaleInputVal = "ScaledInput/ValidationDataset{}.h5".format(sample_size)
+        ScaleInputTrain = "ScaledInput/TrainingDataset{}_{}.h5".format(sample_size, label)
+        ScaleInputVal = "ScaledInput/ValidationDataset{}_{}.h5".format(sample_size, label)
         CheckPoint = 'CheckPoint/CheckPoint{}_{}.h5'.format(sample_size,label)
         histfile = 'History/history{}_{}.sav'.format(sample_size, label)
         ValidationLocation = "Result/ValidationResult{size}_{label}.h5".format(size=sample_size, label=label)
-        scaler_file = "Scaler/scaler_{}.pkl".format(sample_size)
+        scaler_file = "Scaler/scaler_{}_{}.pkl".format(sample_size, label)
     else:
         print("{} removed".format(remove))
         DataLocation = DATA_DIR+"/FeatureRemoval/Undersampling_Dataset_No_{}.h5".format(remove)
@@ -351,7 +348,7 @@ def training(sample_size = 0, not_use_weight=False, label='Default', remove=None
             sample_weight = sample_weight,
             callbacks = [ModelCheckpoint(filepath=CheckPoint, verbose = 1, 
                 save_best_only=True), 
-                ReduceLROnPlateau(patience = 4, factor = 0.5, verbose = 1, min_lr=1e-7), 
+                #ReduceLROnPlateau(patience = 4, factor = 0.5, verbose = 1, min_lr=1e-7), 
                 EarlyStopping(patience = 20)
                 ],
             )
@@ -369,15 +366,47 @@ def training(sample_size = 0, not_use_weight=False, label='Default', remove=None
     print ("Save result to {}".format(ValidationLocation))
     val_result.close()
 
+def get_score(file_name='', title='', use_weight=False):
+    valrel = h5py.File(file_name,"r")
+    assert valrel
+    valrel.keys()
+    val_pred = valrel['Prediction'][:,1]
+    val_truth = valrel['Truth'][:]
+    val_weight = valrel['Weight'][:]
+    val_sn = val_pred[np.where(val_truth>0.5)]
+    val_bkg = val_pred[np.where(val_truth<0.5)]
+    weight_sn = val_weight[np.where(val_truth>0.5)]
+    weight_bkg = val_weight[np.where(val_truth<0.5)]
+    print (weight_sn.shape[:10])
+    print (weight_bkg.shape[:10])
+    #plt.figure()
+    if use_weight:
+        n_sn, bins_sn, _ = plt.hist(val_sn, 
+                                weights=weight_sn, 
+                                bins=30, range=(0,1), histtype='step', color='r', label='Signal', normed=False)
+        n_bkg, bins_bkg, _ = plt.hist(val_bkg, 
+                                  weights=weight_bkg, 
+                                  bins=30, range=(0,1), histtype='step', color='b', label='Background', normed=False)
+    else:
+        n_sn, bins_sn, _ = plt.hist(val_sn, bins=30, range=(0,1.), histtype='step', color='r', label='Signal', normed=False)
+        n_bkg, bins_bkg, _ = plt.hist(val_bkg, bins=30, range=(0,1.), histtype='step', color='b', label='Background', normed=False)
+    #plt.title('Neural network score for {}'.format(title))
+    #plt.legend(loc='best')
+    #plt.yscale('log')
+    #plt.show()
+    valrel.close()
+    return bins_sn, n_sn, n_bkg
+
 def testing(sample_size = 0, label='Default', remove=None, mSquark=0, mLSP=0):
     if remove == None:
         DataLocation = DATA_DIR+"/Parameterized_Dataset.h5"
         ScaleInputTrain = "ScaledInput/TrainingDataset{}.h5".format(sample_size)
         ScaleInputVal = "ScaledInput/ValidationDataset{}.h5".format(sample_size)
         CheckPoint = 'CheckPoint/CheckPoint{}_{}.h5'.format(sample_size,label)
-        TestLocation = "Result/TestResult{size}_{label}.h5".format(size=sample_size, label=label)
+        TestLocation = "Result/TestResult{size}_{label}_{mSquark}_{mLSP}.h5".format(size=sample_size, label=label, mSquark=int(mSquark), mLSP=int(mLSP))
         TrainLocation = "Result/TrainResult{size}_{label}.h5".format(size=sample_size, label=label)
-        scaler_file = "Scaler/scaler_{}.pkl".format(sample_size)
+        scaler_file = "Scaler/scaler_{}_{}.pkl".format(sample_size, label)
+        shape_file = "ShapeOutput/Score{size}_{label}_{mSquark}_{mLSP}.h5".format(size=sample_size, label=label, mSquark = int(mSquark), mLSP=int(mLSP))
     else:
         print("{} removed".format(remove))
         DataLocation = DATA_DIR+"/FeatureRemoval/Undersampling_Dataset_No_{}.h5".format(remove)
@@ -431,6 +460,17 @@ def testing(sample_size = 0, label='Default', remove=None, mSquark=0, mLSP=0):
     test_result.create_dataset("Weight",data=weight_test)
     print("Save to {}".format(TestLocation))
     test_result.close()
+    
+    if not os.path.isdir('ShapeOutput/'):
+        os.makedirs('ShapeOutput/')
+	
+    bins, n_sn, n_bkg = get_score(TestLocation, "Full Test Set with sample weights", use_weight=True)
+    with h5py.File(shape_file,"w") as out:
+        out.create_dataset("Bins", data=bins)
+        out.create_dataset("Signal", data=n_sn)
+        out.create_dataset("Background", data=n_bkg)
+        print("Save shape output to {}".format(shape_file))
+    
 #
 #    train_result = h5py.File(TrainLocation,"w")
 #    train_result.create_dataset("Prediction",data=train_pred)
@@ -444,6 +484,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-c','--create', action='store_true', help='Create dataset')
     parser.add_argument('-t','--test', action='store_true', help='Test on validation set')
+    parser.add_argument('-a','--all', action='store_true', help='Test on validation set, evaluate at all mass points')
     parser.add_argument('--mSquark', help='Squark mass for parameterized testing')
     parser.add_argument('--mLSP', help='LSP mass for parameterized testing')
     parser.add_argument('-u','--tune', action='store_true', help='Model tuning')
@@ -452,8 +493,28 @@ if __name__ == "__main__":
     parser.add_argument('-nw','--noweight', action='store_true', help='Not use sample weights')
     parser.add_argument('-l','--label', default='', help='Label for benchmark study')
     parser.add_argument('-r','--remove',help='Remove each feature')
+    parser.add_argument('--fraction',type=int, default =0, help='Fraction to test')
+    parser.add_argument('--box',type=int, default=1, help='1: Monojet. Else: Multijet.')
 
     args = parser.parse_args()
+    
+    DATA_DIR = '/bigdata/shared/analysis/Boxes'
+    FEATURES = ['alphaT', 'dPhiMinJetMET', 'dPhiRazor', 'HT', 'jet1MT', 'leadingJetCISV', 'leadingJetPt', 'MET', 'MHT', 'MR', 'MT2', 'nSelectedJets', 'Rsq', 'subleadingJetPt']
+
+    #DATA_DIR = '/home/ubuntu/data/'
+
+    if args.box == 1:
+        print("Using monojet box")
+        DATA_DIR += '/MonoJet/'
+    elif args.box == 2:
+        DATA_DIR += '/DiJet/'
+        print("Using dijet box")
+    elif args.box == 4 or args.box==5 or args.box == 6:
+        DATA_DIR += '/FourJet/'
+        print("Using fourjet box")
+    else:
+        DATA_DIR += '/SevenJet/'
+        print("Using sevenjet box")
 
     if args.noweight: print ("Not using sample weight")
     print ("Using GPU(s):",args.device)
@@ -466,7 +527,33 @@ if __name__ == "__main__":
         sys.exit("Don't try to create the dataset here. Use the DataResampling notebook for the moment")
         #create_dataset()
     if args.test:
-        testing(args.sample, label=args.label, remove=args.remove, mSquark=float(args.mSquark), mLSP=float(args.mLSP))
+        if not args.all:
+            testing(args.sample, label=args.label, remove=args.remove, mSquark=float(args.mSquark), mLSP=float(args.mLSP))
+        else:
+            lower_test = 0
+            upper_test = 505
+            if args.fraction == 1:
+                upper_test = 101
+            elif args.fraction == 2:
+                lower_test = 101
+                upper_test = 201
+            elif args.fraction == 3:
+                lower_test = 201
+                upper_test = 301
+            elif args.fraction == 4:
+                lower_test = 301
+                upper_test = 401
+            elif args.fraction == 5:
+                lower_test = 401
+            from glob import glob
+            SIGNAL = [os.path.basename(x).replace('.h5','') for x in glob(DATA_DIR+'T2qq*')]
+            for i,signal in enumerate(SIGNAL):
+                if i < lower_test or i > upper_test: continue
+                mSquark = signal.split('_')[1]
+                mLSP = signal.split('_')[2]
+                print("{}/{} Evaluating mSquark = {}, mLSP = {}".format(i, len(SIGNAL)-1, mSquark, mLSP))
+                testing(args.sample, label=args.label, remove=args.remove, mSquark=float(mSquark), mLSP=float(mLSP))
+
     elif args.tune:
         tuning(args.sample)
     else:

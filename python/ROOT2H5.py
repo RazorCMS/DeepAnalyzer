@@ -6,13 +6,26 @@ import numpy as np
 import h5py
 import numpy.lib.recfunctions as nlr
 from normalizeFastsimSMS import makeFileLists
+from utils.TriggerManager import TriggerManager
 
 SIGNAL_DIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/SignalFastsim/weighted/'
 BACKGROUND_DIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/Signal/'
 
 # box: MultiJet = 21, MonoJet = 22
-CUT_MONO = 'leadingJetPt>100 && MET>100 && MHT>100 && nBTaggedJets == 0 && box==22 && (subleadingJetPt<60 || nSelectedJets == 1)'
-CUT_MULTI = 'leadingJetPt>100 && MET>100 && MHT>100 && nBTaggedJets == 0 && box==21 && subleadingJetPt>60'
+MT2Trigger = TriggerManager('MT2')
+MHTTrigger = TriggerManager('MHT')
+RazorTrigger = TriggerManager('Razor')
+TriggerCut = MT2Trigger.appendTriggerCuts() + ' || ' + MHTTrigger.appendTriggerCuts() + ' || ' + RazorTrigger.appendTriggerCuts()
+BASELINE_MT2 = '(((HT > 1000 && MET > 30) || (HT > 250 && MET > 250)) && (( MT2 > 200 || (MT2 > 400 && HT > 1500)) && nSelectedJets > 1))'
+BASELINE_MHT = '(MHT > 250 && HT > 300)'
+BASELINE_RAZOR = '((MR > 650 && Rsq > 0.3) || (MR > 1600 && Rsq > 0.2))'
+#BASELINE_CUT = 'leadingJetPt>100 && HT > 100 && jet1MT > 100 && MET > 200 && MHT > 200 && MR > 200 && MT2 > 200 && Rsq > 0.2 &&' + TriggerCut
+BASELINE_CUT = 'leadingJetPt>100 &&' + TriggerCut + '&& (' + BASELINE_MT2 + '||' + BASELINE_MHT + '||' + BASELINE_RAZOR + ')'
+CUT_MONOJET = BASELINE_CUT + ' && box==22 && (subleadingJetPt<60 || nSelectedJets == 1)'
+CUT_DIJET = BASELINE_CUT + ' && box==21 && subleadingJetPt>60 && nSelectedJets > 1 && nSelectedJets < 4'
+CUT_FOURJET = BASELINE_CUT + ' && box==21 && subleadingJetPt>60 && nSelectedJets > 3 && nSelectedJets < 7'
+CUT_SEVENJET = BASELINE_CUT + ' && box==21 && subleadingJetPt>60 && nSelectedJets > 6'
+CUT_MULTIJET = BASELINE_CUT + ' && box ==21 && subleadingJetPt>60'
 
 def makeFileLists(inDir, smsName, OneDScan=False):
     """
@@ -106,18 +119,27 @@ SAMPLES['ZInv']['test'] = BACKGROUND_DIR+"/jobs/InclusiveSignalRegion_Razor2016_
 for signal in SignalDict:
     SAMPLES['T2qq_{}_{}'.format(signal[0],signal[1])]['test'] = SIGNAL_DIR+SignalDict[signal][0]
 
-def convert(tree, sample='', box=1):
+def convert(tree, sample='', box=1, start=None, stop=None):
     if box==1:
-        print("Using monojet box with selection: {}".format(CUT_MONO))
-        CUT = CUT_MONO
+        print("Using monojet box with selection: {}".format(CUT_MONOJET))
+        CUT = CUT_MONOJET
+    elif box == 2 or box == 3:
+        print("Using dijet box with selection: {}".format(CUT_DIJET))
+        CUT = CUT_DIJET
+    elif box == 4 or box == 5 or box == 6:
+        print("Using fourjet box with selection: {}".format(CUT_FOURJET))
+        CUT = CUT_FOURJET
+    elif box == 7:
+        print("Using sevenjet box with selection: {}".format(CUT_SEVENJET))
+        CUT = CUT_SEVENJET
     else:
-        print("Using multijet box with selection: {}".format(CUT_MULTI))
-        CUT = CUT_MULTI
-
+        print("Using multijet box with selection: {}".format(CUT_MULTIJET))
+        CUT = CUT_MULTIJET
+    #NEvents = tree.GetEntries()
     print("Transforming {} events from {}".format(tree.GetEntries(), sample))
     feature = tree2array(tree,
-            branches = ['weight','alphaT','dPhiMinJetMET','dPhiRazor','HT','jet1MT','leadingJetCISV','leadingJetPt','MET','MHT','MR','MT2','nSelectedJets','Rsq','subleadingJetPt'],
-            selection = CUT)
+                branches = ['weight','alphaT','dPhiMinJetMET','dPhiRazor','HT','jet1MT','leadingJetCISV','leadingJetPt','MET','MHT','MR','MT2','nSelectedJets','Rsq','subleadingJetPt'],
+                selection = CUT, start=start, stop=stop)
     if 'T2qq' in sample:
         label = np.ones(shape=(feature.shape), dtype = [('label','f4')])
         mSquark = int(sample.split('_')[1])
@@ -137,22 +159,47 @@ def convert(tree, sample='', box=1):
     return data
 
 def saveh5(sample,loca,box=1):
-    SAVEDIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/h5/'
+    #SAVEDIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/h5/'
+    SAVEDIR = '/eos/cms/store/group/dpg_hcal/comm_hcal/qnguyen/H5/OR_CUT/'
     if box == 1:
-        SAVEDIR += '/Mono/'
+        SAVEDIR += '/MonoJet/'
+    elif box == 2 or box == 3:
+        SAVEDIR += '/DiJet/'
+    elif box == 4 or box == 5 or box == 6:
+        SAVEDIR += '/FourJet/'
+    elif box == 7:
+        SAVEDIR += '/SevenJet/'
     else:
-        SAVEDIR += '/Multi/'
+        SAVEDIR += '/MultiJet/'
     if not os.path.isdir(SAVEDIR):
         os.makedirs(SAVEDIR)
 
     print(SAVEDIR+'/'+sample+'.h5')
-    outh5 = h5py.File(SAVEDIR+'/'+sample+'.h5','w')
+    if os.path.isfile(SAVEDIR+'/'+sample+'.h5'):
+        print ("Remove old file")
+        os.remove(SAVEDIR+'/'+sample+'.h5')
     _file = rt.TFile.Open(SAMPLES[sample][loca])
     _tree = _file.Get('InclusiveSignalRegion')
-    outh5['Data'] = convert(_tree, sample, box)
-    outh5.close()
-    _file.Close()
-    print("Save to {}".format(SAVEDIR+'/'+sample+'.h5'))
+    NEvents = _tree.GetEntries()
+    segments = int(NEvents / 1e7)
+    if segments < 2:
+        outh5 = h5py.File(SAVEDIR+'/'+sample+'.h5','w')
+        outh5['Data'] = convert(_tree, sample, box)
+        outh5.close()
+        _file.Close()
+        print("Save to {}".format(SAVEDIR+'/'+sample+'.h5'))
+    else:
+        for i in range(segments):
+            print("Converting {}/{}".format(i, segments))
+            outname = SAVEDIR+'/'+sample+'_'+str(i)+'.h5'
+            start = int(i*1e7)
+            stop = int((i+1)*1e7)
+            if stop > NEvents: stop = NEvents
+            outh5 = h5py.File(outname,'w')
+            outh5['Data'] = convert(_tree, sample, box, start, stop)
+            outh5.close()
+            print("Save to {}".format(outname))
+        _file.Close()
 
 parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group(required=True)

@@ -26,7 +26,7 @@ for sample in sorted(samples):
             #print("Merged shape {}".format(merge.shape))
 with h5py.File(args.sample+'.h5','w') as outfile:
     outfile['Data'] = merge
-    print("Save to {}".format(args.sample))
+    print("Save to {}".format(args.sample+'.h5','w'))
 
 
 

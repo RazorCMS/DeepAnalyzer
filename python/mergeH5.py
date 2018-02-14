@@ -24,7 +24,7 @@ for sample in sorted(samples):
         else:
             merge = np.hstack((merge, data))
             #print("Merged shape {}".format(merge.shape))
-with h5py.File(args.sample,'w') as outfile:
+with h5py.File(args.sample+'.h5','w') as outfile:
     outfile['Data'] = merge
     print("Save to {}".format(args.sample))
 

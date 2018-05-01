@@ -160,6 +160,7 @@ def load_dataset(location, load_type = 0, sample_size = 0):
     has_nan(_x)
     has_nan(_y)
     has_nan(_weight)
+    _weight = np.clip(_weight, None, 1e3) # Remove crazy weights
     return _x, _y, _weight
 
 def get_class_weight(label):
@@ -188,7 +189,7 @@ def scale_dataset(x_train, sample_size=0, scalerfile=None):
 
 def create_model(optimizer='adam', layers=3, init_size = 1000, remove=None):
     from keras.models import Sequential
-    from keras.layers import Input, Dense, Dropout
+    from keras.layers import Input, Dense, Dropout#, AlphaDropout
     
     # Training with a simple FFNN
     model = Sequential()
@@ -197,13 +198,17 @@ def create_model(optimizer='adam', layers=3, init_size = 1000, remove=None):
         if size < 5: break
         if lay==0: 
             if remove == None:
+                #model.add(Dense(size, input_shape=(16,), activation='selu', kernel_initializer='lecun_normal', bias_initializer='zeros'))
                 model.add(Dense(size, input_shape=(16,), activation='relu'))
             else:
+                #model.add(Dense(size, input_shape=(13,), activation='selu', kernel_initializer='lecun_normal', bias_initializer='zeros'))
                 model.add(Dense(size, input_shape=(13,), activation='relu'))
         else:
             #model.add(Dropout(0.5))
+            #model.add(Dense(size, activation='selu', kernel_initializer='lecun_normal', bias_initializer='zeros'))
             model.add(Dense(size, activation='relu'))
-    #model.add(Dropout(0.5))
+    #model.add(AlphaDropout(0.5))
+    model.add(Dropout(0.5))
     model.add(Dense(2, activation = 'softmax'))
 
     model.summary()
@@ -342,7 +347,7 @@ def training(sample_size = 0, not_use_weight=False, label='Default', remove=None
     from keras.callbacks import ModelCheckpoint,EarlyStopping,ReduceLROnPlateau
     hist = model.fit(x_train, y_train,
             validation_data = val_tuple,
-            epochs = 500,
+            nb_epoch = 500,
             batch_size = 1024,
             class_weight = class_weight,
             sample_weight = sample_weight,
@@ -397,80 +402,90 @@ def get_score(file_name='', title='', use_weight=False):
     valrel.close()
     return bins_sn, n_sn, n_bkg
 
-def testing(sample_size = 0, label='Default', remove=None, mSquark=0, mLSP=0):
-    if remove == None:
+def select_mass_point(x_test, y_test, weight_test, mSquark, mLSP):
+    selected_signal = ((abs(x_test[:,-2] - mSquark) < 0.01) & (abs(x_test[:,-1] - mLSP) < 0.01) & (y_test > 0.5))
+    x_signal = x_test[selected_signal]
+    if len(x_signal) < 1: sys.exit("Required mass point not found in FastsimSMS.")
+    y_signal = y_test[selected_signal]
+    weight_signal = weight_test[selected_signal]
+    
+    x_background = x_test[y_test < 0.5]
+    y_background = y_test[y_test < 0.5]
+    weight_background = weight_test[y_test < 0.5]
+    x_background[:,-2] = float(mSquark)
+    x_background[:,-1] = float(mLSP)
+    print ("y signal shape = {}".format(y_signal.shape))
+    print ("y background shape = {}".format(y_background.shape))
+    x_fin = np.vstack((x_signal, x_background))
+    y_fin = np.concatenate((y_signal, y_background))
+    weight_fin = np.concatenate((weight_signal, weight_background))
+
+    return x_fin, y_fin, weight_fin
+
+
+def testing(sample_size = 0, label='Default', remove=None, mSquark=None, mLSP=None):
+    
+#    x_train, y_train, weight_train = load_dataset(DataLocation,0,sample_size = sample_size)
+#    x_train = scale_dataset(x_train, sample_size, scaler_file)
+    if mSquark == 0 and mLSP == 0: # Scan all mass points
+        from glob import glob
+        SIGNAL = [os.path.basename(x).replace('.h5','') for x in glob(DATA_DIR+'T2qq*')]
         DataLocation = DATA_DIR+"/Parameterized_Dataset.h5"
         ScaleInputTrain = "ScaledInput/TrainingDataset{}.h5".format(sample_size)
         ScaleInputVal = "ScaledInput/ValidationDataset{}.h5".format(sample_size)
         CheckPoint = 'CheckPoint/CheckPoint{}_{}.h5'.format(sample_size,label)
-        TestLocation = "Result/TestResult{size}_{label}_{mSquark}_{mLSP}.h5".format(size=sample_size, label=label, mSquark=int(mSquark), mLSP=int(mLSP))
         TrainLocation = "Result/TrainResult{size}_{label}.h5".format(size=sample_size, label=label)
         scaler_file = "Scaler/scaler_{}_{}.pkl".format(sample_size, label)
-        shape_file = "ShapeOutput/Score{size}_{label}_{mSquark}_{mLSP}.h5".format(size=sample_size, label=label, mSquark = int(mSquark), mLSP=int(mLSP))
-    else:
-        print("{} removed".format(remove))
-        DataLocation = DATA_DIR+"/FeatureRemoval/Undersampling_Dataset_No_{}.h5".format(remove)
-        CheckPoint = 'CheckPoint/FeatureRemoval/CheckPoint{}_{}_No_{}.h5'.format(sample_size,label,remove)
-        ScaleInputTrain = "ScaledInput/FeatureRemoval/TrainingDataset{}_No_{}.h5".format(sample_size,remove)
-        ScaleInputVal = "ScaledInput/FeatureRemoval/ValidationDataset{}_No_{}.h5".format(sample_size,remove)
-        TestLocation = "Result/FeatureRemoval/TestResult{size}_{label}_{remove}.h5".format(size=sample_size, label=label, remove=remove)
-        TrainLocation = "Result/FeatureRemoval/TrainResult{size}_{label}_{remove}.h5".format(size=sample_size, label=label, remove=remove)
-        scaler_file = "Scaler/FeatureRemoval/scaler_{}_No_{}.pkl".format(sample_size, remove)
-    
-#    x_train, y_train, weight_train = load_dataset(DataLocation,0,sample_size = sample_size)
-#    x_train = scale_dataset(x_train, sample_size, scaler_file)
-
-    def select_mass_point(x_test, y_test, weight_test, mSquark, mLSP):
-        selected_signal = ((abs(x_test[:,-2] - mSquark) < 0.01) & (abs(x_test[:,-1] - mLSP) < 0.01) & (y_test > 0.5))
-        x_signal = x_test[selected_signal]
-        if len(x_signal) < 1: sys.exit("Required mass point not found in FastsimSMS.")
-        y_signal = y_test[selected_signal]
-        weight_signal = weight_test[selected_signal]
         
-        x_background = x_test[y_test < 0.5]
-        y_background = y_test[y_test < 0.5]
-        weight_background = weight_test[y_test < 0.5]
-        x_background[:,-2] = float(mSquark)
-        x_background[:,-1] = float(mLSP)
-        print ("y signal shape = {}".format(y_signal.shape))
-        print ("y background shape = {}".format(y_background.shape))
-        x_fin = np.vstack((x_signal, x_background))
-        y_fin = np.concatenate((y_signal, y_background))
-        weight_fin = np.concatenate((weight_signal, weight_background))
+        from keras.models import load_model
+        print ("Loading the model checkpoint: {}".format(CheckPoint))
+        model = load_model(CheckPoint)
+        _x_test, _y_test, _weight_test = load_dataset(DataLocation,2,sample_size = sample_size)
 
-        return x_fin, y_fin, weight_fin
+        for i,signal in enumerate(SIGNAL):
+            #if i < lower_test or i > upper_test: continue
+            mSquark = int(signal.split('_')[1])
+            mLSP = int(signal.split('_')[2])
+            print("{}/{} Evaluating mSquark = {}, mLSP = {}".format(i, len(SIGNAL)-1, mSquark, mLSP))
+            if remove == None:
+                TestLocation = "Result/TestResult{size}_{label}_{mSquark}_{mLSP}.h5".format(size=sample_size, label=label, mSquark=int(mSquark), mLSP=int(mLSP))
+                shape_file = "ShapeOutput/Score{size}_{label}_{mSquark}_{mLSP}.h5".format(size=sample_size, label=label, mSquark = int(mSquark), mLSP=int(mLSP))
+            else:
+                print("{} removed".format(remove))
+                DataLocation = DATA_DIR+"/FeatureRemoval/Undersampling_Dataset_No_{}.h5".format(remove)
+                CheckPoint = 'CheckPoint/FeatureRemoval/CheckPoint{}_{}_No_{}.h5'.format(sample_size,label,remove)
+                ScaleInputTrain = "ScaledInput/FeatureRemoval/TrainingDataset{}_No_{}.h5".format(sample_size,remove)
+                ScaleInputVal = "ScaledInput/FeatureRemoval/ValidationDataset{}_No_{}.h5".format(sample_size,remove)
+                TestLocation = "Result/FeatureRemoval/TestResult{size}_{label}_{remove}.h5".format(size=sample_size, label=label, remove=remove)
+                TrainLocation = "Result/FeatureRemoval/TrainResult{size}_{label}_{remove}.h5".format(size=sample_size, label=label, remove=remove)
+                scaler_file = "Scaler/FeatureRemoval/scaler_{}_No_{}.pkl".format(sample_size, remove)
 
-    x_test, y_test, weight_test = load_dataset(DataLocation,2,sample_size = sample_size)
-    x_test, y_test, weight_test = select_mass_point(x_test, y_test, weight_test, mSquark, mLSP)
+            x_test, y_test, weight_test = select_mass_point(_x_test, _y_test, _weight_test, mSquark, mLSP)
+            x_test = scale_dataset(x_test, sample_size, scaler_file)
 
-    x_test = scale_dataset(x_test, sample_size, scaler_file)
+            test_pred = model.predict(x_test)
+            #train_pred = model.predict(x_train)
 
-    from keras.models import load_model
-    print ("Loading the model checkpoint: {}".format(CheckPoint))
-    model = load_model(CheckPoint)
-    test_pred = model.predict(x_test)
-    #train_pred = model.predict(x_train)
-
-    if not os.path.isdir('Result/FeatureRemoval'):
-        os.makedirs('Result/FeatureRemoval')
-    test_result = h5py.File(TestLocation,"w")
-    test_result.create_dataset("Prediction",data=test_pred)
-    test_result.create_dataset("Truth",data=y_test)
-    test_result.create_dataset("Data",data=x_test)
-    test_result.create_dataset("Weight",data=weight_test)
-    print("Save to {}".format(TestLocation))
-    test_result.close()
-    
-    if not os.path.isdir('ShapeOutput/'):
-        os.makedirs('ShapeOutput/')
-	
-    bins, n_sn, n_bkg = get_score(TestLocation, "Full Test Set with sample weights", use_weight=True)
-    with h5py.File(shape_file,"w") as out:
-        out.create_dataset("Bins", data=bins)
-        out.create_dataset("Signal", data=n_sn)
-        out.create_dataset("Background", data=n_bkg)
-        print("Save shape output to {}".format(shape_file))
-    
+            if not os.path.isdir('Result/FeatureRemoval'):
+                os.makedirs('Result/FeatureRemoval')
+            test_result = h5py.File(TestLocation,"w")
+            test_result.create_dataset("Prediction",data=test_pred)
+            test_result.create_dataset("Truth",data=y_test)
+            test_result.create_dataset("Data",data=x_test)
+            test_result.create_dataset("Weight",data=weight_test)
+            print("Save to {}".format(TestLocation))
+            test_result.close()
+            
+            if not os.path.isdir('ShapeOutput/'):
+                os.makedirs('ShapeOutput/')
+                
+            bins, n_sn, n_bkg = get_score(TestLocation, "Full Test Set with sample weights", use_weight=True)
+            with h5py.File(shape_file,"w") as out:
+                out.create_dataset("Bins", data=bins)
+                out.create_dataset("Signal", data=n_sn)
+                out.create_dataset("Background", data=n_bkg)
+                print("Save shape output to {}".format(shape_file))
+            
 #
 #    train_result = h5py.File(TrainLocation,"w")
 #    train_result.create_dataset("Prediction",data=train_pred)
@@ -484,21 +499,22 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-c','--create', action='store_true', help='Create dataset')
     parser.add_argument('-t','--test', action='store_true', help='Test on validation set')
+    parser.add_argument('-p','--predict', help='Predict the NN score')
     parser.add_argument('-a','--all', action='store_true', help='Test on validation set, evaluate at all mass points')
-    parser.add_argument('--mSquark', help='Squark mass for parameterized testing')
-    parser.add_argument('--mLSP', help='LSP mass for parameterized testing')
+    parser.add_argument('--mSquark', help='Squark mass for parameterized testing', default=0)
+    parser.add_argument('--mLSP', help='LSP mass for parameterized testing', default=0)
     parser.add_argument('-u','--tune', action='store_true', help='Model tuning')
     parser.add_argument('-s','--sample', default=0, help='Use a small sample for training and validation')
     parser.add_argument('-d','--device', default="0", help='GPU device to use')
     parser.add_argument('-nw','--noweight', action='store_true', help='Not use sample weights')
     parser.add_argument('-l','--label', default='', help='Label for benchmark study')
     parser.add_argument('-r','--remove',help='Remove each feature')
-    parser.add_argument('--fraction',type=int, default =0, help='Fraction to test')
-    parser.add_argument('--box',type=int, default=1, help='1: Monojet. Else: Multijet.')
+    parser.add_argument('--part',type=int, default =0, help='Fraction to test')
+    parser.add_argument('--box',type=int, default=0, help='1: Monojet. Else: Multijet.')
 
     args = parser.parse_args()
     
-    DATA_DIR = '/bigdata/shared/analysis/Boxes'
+    DATA_DIR = '/bigdata/shared/analysis/OR_CUT/'
     FEATURES = ['alphaT', 'dPhiMinJetMET', 'dPhiRazor', 'HT', 'jet1MT', 'leadingJetCISV', 'leadingJetPt', 'MET', 'MHT', 'MR', 'MT2', 'nSelectedJets', 'Rsq', 'subleadingJetPt']
 
     #DATA_DIR = '/home/ubuntu/data/'
@@ -512,9 +528,12 @@ if __name__ == "__main__":
     elif args.box == 4 or args.box==5 or args.box == 6:
         DATA_DIR += '/FourJet/'
         print("Using fourjet box")
-    else:
+    elif args.box == 7:
         DATA_DIR += '/SevenJet/'
         print("Using sevenjet box")
+    else:
+        DATA_DIR += '/MultiJet/'
+        print("Using multijet box")
 
     if args.noweight: print ("Not using sample weight")
     print ("Using GPU(s):",args.device)
@@ -532,19 +551,34 @@ if __name__ == "__main__":
         else:
             lower_test = 0
             upper_test = 505
-            if args.fraction == 1:
+            if args.part == 1:
+                upper_test = 51
+            elif args.part == 2:
+                lower_test = 51
                 upper_test = 101
-            elif args.fraction == 2:
+            elif args.part == 3:
                 lower_test = 101
+                upper_test = 151
+            elif args.part == 4:
+                lower_test = 151
                 upper_test = 201
-            elif args.fraction == 3:
+            elif args.part == 5:
                 lower_test = 201
+                upper_test = 251
+            elif args.part == 6:
+                lower_test = 251
                 upper_test = 301
-            elif args.fraction == 4:
+            elif args.part == 7:
                 lower_test = 301
+                upper_test = 351
+            elif args.part == 8:
+                lower_test = 351
                 upper_test = 401
-            elif args.fraction == 5:
+            elif args.part == 9:
                 lower_test = 401
+                upper_test = 451
+            elif args.part == 10:
+                lower_test = 451
             from glob import glob
             SIGNAL = [os.path.basename(x).replace('.h5','') for x in glob(DATA_DIR+'T2qq*')]
             for i,signal in enumerate(SIGNAL):
@@ -553,7 +587,8 @@ if __name__ == "__main__":
                 mLSP = signal.split('_')[2]
                 print("{}/{} Evaluating mSquark = {}, mLSP = {}".format(i, len(SIGNAL)-1, mSquark, mLSP))
                 testing(args.sample, label=args.label, remove=args.remove, mSquark=float(mSquark), mLSP=float(mLSP))
-
+    elif args.predict != None:
+        predict(args.predict)
     elif args.tune:
         tuning(args.sample)
     else:

@@ -1382,7 +1382,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
             }
 
             nSelectedJets++;
-            if(jetPt[i]*JEC*jetEnergySmearFactor > 80) numJetsAbove80GeV++;	  
+            if (jetPt[i]*JEC*jetEnergySmearFactor > 80) numJetsAbove80GeV++;	  
             GoodJets.push_back(thisJet);	  
 
         } //loop over jets
@@ -1726,6 +1726,14 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
                 events->Rsq_NoPho = computeRsq(hemispheresNoLeadPhoton[0], hemispheresNoLeadPhoton[1], PFMET_NOPHO);
                 events->dPhiRazor_NoPho = fabs(hemispheresNoLeadPhoton[0].DeltaPhi(hemispheresNoLeadPhoton[1]));
             }
+            
+            // Compute MT2 and alphaT
+            if (GoodJetsNoLeadPhoton.size() >= 2)
+            {
+                events->MT2_NoPho = calcMT2(0., false, GoodJetsNoLeadPhoton, photonPlusMet_perp , 2, 3);
+                events->alphaT_NoPho = GetAlphaT(GoodJetsNoLeadPhoton);
+            } 
+        
         }
 
         // GenJET MR and HT
@@ -1803,6 +1811,16 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
             events->HT_NoW = ht_NoLep;
             events->nJets80_NoW = njets80NoLep;
             events->METPhi = MyMET.Phi();
+            for (int i=0;i<int(GoodJetsNoLeptons.size());i++) {
+                if (i==0) {
+                    events->leadingJetPt_NoW = GoodJetsNoLeptons[i].Pt();
+                }
+                if (i==1) {
+                    events->subleadingJetPt_NoW = GoodJetsNoLeptons[i].Pt();
+                }
+            }
+            events->leadingJetCISV = leadingJetCISV;
+            events->leadingJetEta = leadingJetEta;
 
             //compute razor variables 
             if(events->nJets_NoW > 1 && GoodJets.size()<20)
@@ -1812,6 +1830,13 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
                 events->MR_NoW = computeMR(hemispheresNoW[0], hemispheresNoW[1]); 
                 events->dPhiRazor_NoW = fabs(hemispheresNoW[0].DeltaPhi(hemispheresNoW[1])); 
             }
+            
+            // Compute MT2 and alphaT
+            if (events->nJets_NoW >= 2)
+            {
+                events->MT2_NoW = calcMT2(0., false, GoodJetsNoLeptons, LepPlusMet_perp, 2, 3);
+                events->alphaT_NoW = GetAlphaT(GoodJetsNoLeptons);
+            } 
 
             //more W kinematics
             if (GoodLeptons.size() > 0) 
@@ -1860,6 +1885,13 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
                 events->MR_NoZ = computeMR(hemispheresNoZ[0], hemispheresNoZ[1]); 
                 events->dPhiRazor_NoZ = fabs(hemispheresNoZ[0].DeltaPhi(hemispheresNoZ[1])); 
             }
+            
+            // Compute MT2 and alphaT
+            if (events->nJets_NoZ >= 2)
+            {
+                events->MT2_NoZ = calcMT2(0., false, GoodJetsNoLeptons, LepPlusMet_perp, 2, 3);
+                events->alphaT_NoZ = GetAlphaT(GoodJetsNoLeptons);
+            } 
         }
 
         //****************************************************************************
@@ -1905,19 +1937,26 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         if (leptonSkimOption == 2) 
         {
             if (!(
-                        (abs(events->lep1Type) == 11 || abs(events->lep1Type) == 13)
-                        && (abs(events->lep2Type) == 11  || abs(events->lep2Type) == 13 )
-                        && events->lep1.Pt() > 0 && events->lep2.Pt() > 0
+                        ((abs(events->lep1Type) == 11 && events->lep1.Pt() > 30)
+                        || (abs(events->lep1Type) == 13 && events->lep2.Pt() > 30))
+                        && events->MET > 40
+                        && events->mll > 20 
+                        && (((abs(events->lep1Type) == abs(events->lep2Type)) && ((events->mll < 76) || (events->mll > 106)))
+                        || (abs(events->lep1Type != abs(events->lep2Type))))
                  )
                ) passSkim = false;
+            //if (!passSkim) std::cout << "MET = " << events->MET << "  mll = " << events->mll << std::endl;
         }
 
         //single lepton skim
         if (leptonSkimOption == 1) 
         {
             if (!( 
-                        (abs(events->lep1Type) == 11 || abs(events->lep1Type) == 13)
-                        && events->lep1.Pt() > 15
+                        ((abs(events->lep1Type) == 11 && events->lep1.Pt() > 30)
+                        || (abs(events->lep1Type) == 13 && events->lep2.Pt() > 25))
+                        && events->lep1MT >30 
+                        && events->lep1MT <100
+                        && events->MET > 30
                  )
                ) passSkim = false;
         }
@@ -1934,7 +1973,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         {
             if (!(
                         GoodPhotons.size() > 0
-                        && GoodPhotons[0].Pt() > 25	
+                        && GoodPhotons[0].Pt() > 100	
                  )
                ) passSkim = false;	
         }
@@ -1943,7 +1982,7 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         if (razorSkimOption == 1) 
         {
             if ( !( 
-                        events->leadingJetPt > 100
+                        events->MET > 20
                   )
                ) passSkim = false;
         }
@@ -1952,7 +1991,10 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         if(razorSkimOption == 2)
         {
             if (!(
-                        events->leadingJetPt > 100
+                        ((abs(events->lep1Type) == 11 && events->lep1.Pt() > 30)
+                        || (abs(events->lep1Type) == 13 && events->lep2.Pt() > 25))
+                        && events->lep1MT >30 
+                        && events->lep1MT <100
                  )
                ) passSkim = false;		
         }
@@ -1962,7 +2004,9 @@ void InclusiveControlRegion::Analyze(bool isData, int option, string outputfilen
         if(razorSkimOption == 3) 
         {
             if (!(
-                        events->leadingJetPt > 100
+                        events->mll > 80 && events->mll < 110
+                        && events->lep1.Pt() > 30
+                        && events->lep2.Pt() > 20
                  )
                ) passSkim = false;
         }

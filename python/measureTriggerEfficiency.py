@@ -15,31 +15,35 @@ mytree = filein.Get("InclusiveControlRegion")
 assert(mytree)
 
 def initHist(name, xlow, xhigh):
-    return rt.TEfficiency(name,';Offline '+name,60,xlow,xhigh)
+    return rt.TEfficiency(name,';Offline '+name,25,xlow,xhigh)
 
 HistList = {}
 HistList['alphaT'] = initHist('alphaT', 0, 1.2)
+HistList['dPhiMinJetMET'] = initHist('dPhiMinJetMET', 0, 3.2)
+HistList['dPhiRazor'] = initHist('dPhiRazor', 0, 3.2)
 HistList['HT'] = initHist('HT', 0, 1400)
 HistList['jet1MT'] = initHist('jet1MT', 0, 800)
 HistList['leadingJetPt'] = initHist('leadingJetPt', 0, 800)
 HistList['MET'] = initHist('MET', 0, 800)
 HistList['MHT'] = initHist('MHT', 0, 800)
 HistList['MR'] = initHist('MR', 0, 1000)
-HistList['MT2'] = initHist('MT2', 0, 500)
+HistList['MT2'] = initHist('MT2', 0, 800)
 HistList['Rsq'] = initHist('Rsq', 0, 1.0)
 HistList['subleadingJetPt'] = initHist('subleadingJetPt', 0, 600)
 
 Threshold = {}
-Threshold['alphaT'] = 0
-Threshold['HT'] = 100
-Threshold['jet1MT'] = 200
-Threshold['leadingJetPt'] = 100
-Threshold['MET'] = 100
-Threshold['MHT'] = 100
-Threshold['MR'] = 100
-Threshold['MT2'] = 100
-Threshold['Rsq'] = 0.1
-Threshold['subleadingJetPt'] = 0
+Threshold['alphaT'] = 0.
+Threshold['dPhiMinJetMET'] = 0.
+Threshold['dPhiRazor'] = 0.
+Threshold['HT'] = 100.
+Threshold['jet1MT'] = 100
+Threshold['leadingJetPt'] = 100.
+Threshold['MET'] = 200
+Threshold['MHT'] = 200
+Threshold['MR'] = 300
+Threshold['MT2'] = 200
+Threshold['Rsq'] = 0.2
+Threshold['subleadingJetPt'] = 80.
 
 DenominatorTrigger = TriggerManager('SingleLepton')
 MT2Trigger = TriggerManager('MT2')
@@ -48,7 +52,7 @@ RazorTrigger = TriggerManager('Razor')
 
 entries = mytree.GetEntries()
 print ("NEntries = {}".format(entries))
-entries /= 10 # For fast testing
+entries /= 2 # For fast testing
 print ("Running on {} events".format(entries))
 
 for i in range(entries):
@@ -72,7 +76,7 @@ for i in range(entries):
         exec (cmd)
 rt.gStyle.SetOptStat(0)   
 c1 = rt.TCanvas("c1","",600,600)
-SaveDir = 'TriggerPlots_Fast'
+SaveDir = 'TriggerPlots'
 if not os.path.isdir(SaveDir): os.makedirs(SaveDir)
 for feature in list(HistList):
     HistList[feature].Draw("AP")

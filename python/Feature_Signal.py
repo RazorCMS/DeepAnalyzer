@@ -11,8 +11,11 @@ SAVEFILE = 'SignalRegionPlots.root'
 newfile = rt.TFile(SAVEFILE,"recreate")
 newfile.Close()
 
-SAVEDIR = '/eos/user/q/qnguyen/www/InclusiveFeature_Signal_NoCut/'
-CUT = 'leadingJetPt>100 && (box==21 || box==22)'
+SAVEDIR = '/eos/user/q/qnguyen/www/InclusiveFeature_Signal_TriggerCutOR'
+if not os.path.isdir(SAVEDIR): 
+    os.mkdir(SAVEDIR)
+    print("Making {}".format(SAVEDIR))
+CUT = 'leadingJetPt>100 && (box==21 || box==22) && ((HT > 100 && jet1MT > 100 && MET > 200 && MHT > 200) || MT2 > 200 || (Rsq > 0.2 && MR > 200))'
 
 COLORS = {
         "WJets":rt.kRed+1, 
@@ -119,7 +122,7 @@ for sample in SAMPLES:
         for feature in features:
             _hist = SAMPLES[sample]['feature'][feature]
             if _hist.Integral() == 0:
-                print "Redone {}_{} for a stupid pyROOT pointer/ownership problem that does not fill in the first histogram".format(sample,feature)
+                print ("Redone {}_{} for a stupid pyROOT pointer/ownership problem that does not fill in the first histogram".format(sample,feature))
                 draw_plot(_hist, _tree, feature, sample) 
                 save_plot(_hist, _tree, feature, sample)
     

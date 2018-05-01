@@ -24,13 +24,13 @@ def check_bjobs(job_name):
     if rjobs == 0 and pjobs == 0: finish = True
     return finish
 
-def send_email(label, tag, data, email, finished=True):
-    me = 'Dead Dustin <dustin1111111@gmail.com>'
-    msg = MIMEText('.')
-    if finished:
+def send_email(label, tag, data, email, zombie=None, retry=0):
+    me = 'Very Dead Dustin <dustin111@gmail.com>'
+    msg = MIMEText(zombie)
+    if zombie == None:
         msg['Subject'] = 'Sequence '+label+' '+tag+' '+str(data)+' is finished' 
     else:
-        msg['Subject'] = 'Sequence '+label+' '+tag+' '+str(data)+' has zombies. Restarting.' 
+        msg['Subject'] = 'Sequence '+label+' '+tag+' '+str(data)+' has zombies. Restarting attempt ' +str(retry)
     msg['From'] = me
     msg['To'] = email
     s = smtplib.SMTP('localhost')
@@ -38,7 +38,10 @@ def send_email(label, tag, data, email, finished=True):
     s.quit()
 
 
-def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force=False, email='', fastSim=False, noZombies=False, queue='1nh'):
+def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force=True, email='', fastSim=False, noZombies=False, queue='1nh'):
+    
+    global retry
+
     basedir = os.environ['CMSSW_BASE']+'/src/RazorAnalyzer'
     if not submit: 
         nosub = '--no-sub'
@@ -73,7 +76,7 @@ def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force
                 job_done = check_bjobs('*'+label+'*')
 
         # Before running hadd, unless --no-zombies is specified, we have to check that there are no zombie files in the output.
-        # If there are, remove the zombies and restart the process.
+        # If there are, remove the zombies and restart the process. If the process has been restarted more than 3 times, move on to hadd
         if not noZombies:
             cmd_zombies = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--find-zombies', nosub, '--label', label, data, fastsim]))
             print ' '.join(cmd_zombies)
@@ -83,16 +86,20 @@ def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force
                 zombieFileName = zombieFileName.replace(".txt","_Data.txt")
             with open(zombieFileName) as zombieFile:
                 if len(list(zombieFile)) > 0:
+                    content = zombieFile.read()
                     print "Zombies detected. Start killing."
                     for line in zombieFile:
                         print "Removing {}".format(line)
                         line = line.replace('\n','')
                         os.remove(line)
-                    if (email is not ''): send_email(label, tag, data, email, finished=False)
-                    sub_sequence(tag=tag, isData=isData, submit=submit, label=label, skipSub=False, email=email, fastSim=fastSim, queue='8nh') # Have to resubmit after deleting zombies, move to 8nh queue
+                    retry += 1
+                    if retry < 3:
+                        if (email is not ''): send_email(label, tag, data, email, zombie=content, retry=retry)
+                        sub_sequence(tag=tag, isData=isData, submit=submit, label=label, skipSub=False, email=email, fastSim=fastSim, queue='8nh') # Have to resubmit after deleting zombies, move to 8nh queue
 
                     
         # If skipSub and noZombies are specified, start the sequence at hadd
+        force = '--force'
         cmd_hadd = list(filter(None,['python', 'python/ntupling/NtupleUtils.py', tag, '--hadd', nosub, '--label', label, data, force, fastsim]))
         print ' '.join(cmd_hadd)
         subprocess.call(cmd_hadd)
@@ -119,7 +126,7 @@ def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force
             print ' '.join(cmd_good_lumi)
             subprocess.call(cmd_good_lumi)
         
-        if (email is not None): send_email(label, tag, data, email, finished=True)
+        if (email is not None): send_email(label, tag, data, email, zombie=None)
 
 
 if __name__ == '__main__':
@@ -137,5 +144,5 @@ if __name__ == '__main__':
 
 
     args = parser.parse_args()
-    
+    retry = 0 
     sub_sequence(args.tag, args.data, (not args.noSub), args.label, args.skipSub, args.force, args.email, args.fastsim, args.noZombies, args.queue)

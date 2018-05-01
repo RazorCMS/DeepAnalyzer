@@ -246,6 +246,18 @@ class ControlSampleEvents {
   Float_t                 METPhi;
   Float_t                 METnoHFPhi;
   Float_t                 METRawPhi;
+  Float_t                 MT2_NoW;
+  Float_t                 MT2_NoZ;
+  Float_t                 MT2_NoPho;
+  Float_t                 alphaT_NoW;
+  Float_t                 alphaT_NoZ;
+  Float_t                 alphaT_NoPho;
+  UInt_t                  leadingJetPt_NoZ;
+  UInt_t                  leadingJetPt_NoW;
+  UInt_t                  leadingJetPt_NoPho;
+  UInt_t                  subleadingJetPt_NoZ;
+  UInt_t                  subleadingJetPt_NoW;
+  UInt_t                  subleadingJetPt_NoPho;
   UInt_t                  nJets_NoZ;
   UInt_t                  nJets_NoW;
   UInt_t                  nJets_NoPho;
@@ -506,13 +518,25 @@ class ControlSampleEvents {
     Rsq_NoPho = 0.0 ; 
     HT_NoZ = 0.0 ; 
     HT_NoW = 0.0 ; 
-    HT_NoPho = 0.0 ; 
+    HT_NoPho = 0.0 ;
+    MT2_NoZ = 0.0; 
+    MT2_NoW = 0.0; 
+    MT2_NoPho = 0.0; 
+    alphaT_NoZ = 0.0; 
+    alphaT_NoW = 0.0; 
+    alphaT_NoPho = 0.0; 
     dPhiRazor_NoZ = 0.0 ; 
     dPhiRazor_NoW = 0.0 ; 
     dPhiRazor_NoPho = 0.0 ; 
     MET_NoZ = 0.0 ; 
     MET_NoW = 0.0 ; 
     MET_NoPho = 0.0 ;
+    leadingJetPt_NoZ = 0.0 ; 
+    leadingJetPt_NoW = 0.0 ; 
+    leadingJetPt_NoPho = 0.0 ;
+    subleadingJetPt_NoZ = 0.0 ; 
+    subleadingJetPt_NoW = 0.0 ; 
+    subleadingJetPt_NoPho = 0.0 ;
     METPhi_NoPho = -99.;
     METPhi_NoZ = -99.;
     METPhi_NoW = -99.;
@@ -609,25 +633,41 @@ class ControlSampleEvents {
     tree_->Branch("run",&run,"run/i");
     tree_->Branch("lumi",&lumi,"lumi/i");
     tree_->Branch("event",&event,"event/i");
+    /*
     tree_->Branch("NPU_0",&NPU_0,"NPU_0/i");
     tree_->Branch("NPV",&NPV,"NPV/i");
+    */
     tree_->Branch("MR",&MR,"MR/F");
     tree_->Branch("Rsq",&Rsq,"Rsq/F");
     tree_->Branch("MET",&MET,"MET/F");
     tree_->Branch("nSelectedJets",&nSelectedJets,"nSelectedJets/i");
+    /*
     tree_->Branch("nJets80",&nJets80,"nJets80/i");
     tree_->Branch("nGenBJets",&nGenBJets,"nGenBJets/I");
     tree_->Branch("nBJetsLoose",&nBJetsLoose,"nBJetsLoose/i");
+    */
     tree_->Branch("nBJetsMedium",&nBJetsMedium,"nBJetsMedium/i");
+    /*
     tree_->Branch("nBJetsTight",&nBJetsTight,"nBJetsTight/i");
     tree_->Branch("genHT",&genHT,"genHT/F");
     tree_->Branch("NISRJets",&NISRJets,"NISRJets/I");
     tree_->Branch("nWTags", &nWTags, "nWTags/I");
     tree_->Branch("nTopTags", &nTopTags, "nTopTags/I");
+    */
     tree_->Branch("HT",&HT,"HT/F");
     tree_->Branch("MHT", &MHT, "MHT/F");
     tree_->Branch("MT2", &MT2, "MT2/F");
     tree_->Branch("alphaT", &alphaT, "alphaT/F");
+    tree_->Branch("METPhi",&METPhi,"METPhi/F");
+    tree_->Branch("leadingJetPt",&leadingJetPt,"leadingJetPt/F");
+    tree_->Branch("subleadingJetPt",&subleadingJetPt,"subleadingJetPt/F");
+    tree_->Branch("dPhiRazor",&dPhiRazor,"dPhiRazor/F");
+    tree_->Branch("dPhiMinJetMET",&dPhiMinJetMET,"dPhiMinJetMET/F");
+    tree_->Branch("leadingJetEta",&leadingJetEta,"leadingJetEta/F");
+    tree_->Branch("leadingJetCISV",&leadingJetCISV,"leadingJetCISV/F");
+    tree_->Branch("HLTDecision",&HLTDecision,"HLTDecision[300]/O");
+    tree_->Branch("lep1MT",&lep1MT,"lep1MT/F");
+    tree_->Branch("jet1MT",&jet1MT,"jet1MT/F");
     if (use_full_tree)
     {
         tree_->Branch("wTagScaleFactor", &wTagScaleFactor, "wTagScaleFactor/F");
@@ -661,15 +701,15 @@ class ControlSampleEvents {
 	|| treeType == kTreeType_OneVetoLepton_Reduced 
 	|| treeType == kTreeType_OneTauLepton_Reduced 
 	) {
-      tree_->Branch("genlep1Type",&genlep1Type,"genlep1Type/I");
       tree_->Branch("lep1Type",&lep1Type,"lep1Type/I");
+      tree_->Branch("lep1" ,&lep1Ptr);
+      /*
+      tree_->Branch("genlep1Type",&genlep1Type,"genlep1Type/I");
       tree_->Branch("lep1PassVeto",&lep1PassVeto,"lep1PassVeto/O");
       tree_->Branch("lep1PassLoose",&lep1PassLoose,"lep1PassLoose/O");
       tree_->Branch("lep1PassMedium",&lep1PassMedium,"lep1PassMedium/O");
       tree_->Branch("lep1PassTight",&lep1PassTight,"lep1PassTight/O");
       tree_->Branch("lep1MatchedGenLepIndex",&lep1MatchedGenLepIndex,"lep1MatchedGenLepIndex/I");
-      tree_->Branch("lep1MT",&lep1MT,"lep1MT/F");
-      tree_->Branch("jet1MT",&jet1MT,"jet1MT/F");
       tree_->Branch("lep1MTnoHF",&lep1MTnoHF,"lep1MTnoHF/F");
       tree_->Branch("topPtWeight",&topPtWeight,"topPtWeight/F");
       tree_->Branch("trigWeight1L",&trigWeight1L,"trigWeight1L/F");
@@ -677,13 +717,10 @@ class ControlSampleEvents {
       tree_->Branch("eleEffWeight",&eleEffWeight,"eleEffWeight/F");
       tree_->Branch("muonRecoEffWeight",&muonRecoEffWeight,"muonRecoEffWeight/F");
       tree_->Branch("eleRecoEffWeight",&eleRecoEffWeight,"eleRecoEffWeight/F");
-      tree_->Branch("MET",&MET,"MET/F");
-      tree_->Branch("METPhi",&METPhi,"METPhi/F");
       tree_->Branch("HLTDecision",&HLTDecision,"HLTDecision[300]/O");
       tree_->Branch("lep1Pt",&lep1Pt,"lep1Pt/F");
       tree_->Branch("lep1Eta",&lep1Eta,"lep1Eta/F");
-      tree_->Branch("lep1" ,&lep1Ptr);
-
+        */
       if (use_sys)
       {
           tree_->Branch("metType1PtJetResUp", &metType1PtJetResUp, "metType1PtJetResUp/F");
@@ -723,13 +760,15 @@ class ControlSampleEvents {
 	|| treeType == kTreeType_OneVetoLepton_Full 
 	|| treeType == kTreeType_OneTauLepton_Full 
 	) {
+      tree_->Branch("lep1Type",&lep1Type,"lep1Type/I");
+      tree_->Branch("lep1" ,&lep1Ptr);
+        /*
       tree_->Branch("NPU_Minus1",&NPU_Minus1,"NPU_Minus1/i");
       tree_->Branch("NPU_Plus1",&NPU_Plus1,"NPU_Plus1/i");
       tree_->Branch("event",&event,"event/i");
       tree_->Branch("processID",&processID,"processID/i");
       tree_->Branch("HLTDecision",&HLTDecision,"HLTDecision[300]/O");
       tree_->Branch("genlep1Type",&genlep1Type,"genlep1Type/I");
-      tree_->Branch("lep1Type",&lep1Type,"lep1Type/I");
       tree_->Branch("lep1PassVeto",&lep1PassVeto,"lep1PassVeto/O");
       tree_->Branch("lep1PassLoose",&lep1PassLoose,"lep1PassLoose/O");
       tree_->Branch("lep1PassMedium",&lep1PassMedium,"lep1PassMedium/O");
@@ -744,13 +783,7 @@ class ControlSampleEvents {
       tree_->Branch("muonEffWeight",&muonEffWeight,"muonEffWeight/F");
       tree_->Branch("eleRecoEffWeight",&eleRecoEffWeight,"eleRecoEffWeight/F");
       tree_->Branch("muonRecoEffWeight",&muonRecoEffWeight,"muonRecoEffWeight/F");
-      tree_->Branch("MET",&MET,"MET/F");
-      tree_->Branch("METPhi",&METPhi,"METPhi/F");
-      tree_->Branch("leadingJetPt",&leadingJetPt,"leadingJetPt/F");
-      tree_->Branch("subleadingJetPt",&subleadingJetPt,"subleadingJetPt/F");
-      tree_->Branch("leadingJetEta",&leadingJetEta,"leadingJetEta/F");
-      tree_->Branch("leadingJetCISV",&leadingJetCISV,"leadingJetCISV/F");
-
+    */
       if (use_full_tree)
       {
           tree_->Branch("METnoHF", &METnoHF, "METnoHF/F");
@@ -774,28 +807,32 @@ class ControlSampleEvents {
           tree_->Branch("jet1",    "TLorentzVector", &jet1Ptr);
           tree_->Branch("jet2",    "TLorentzVector", &jet2Ptr);
       }
-      tree_->Branch("dPhiRazor",&dPhiRazor,"dPhiRazor/F");
-      tree_->Branch("dPhiMinJetMET",&dPhiMinJetMET,"dPhiMinJetMET/F");
+      /*
       tree_->Branch("HT",&HT,"HT/F");	  
       tree_->Branch("genWpt",&genWpt,"genWpt/F");
       tree_->Branch("genWphi",&genWphi,"genWphi/F");
       tree_->Branch("genlep1", "TLorentzVector", &genlep1Ptr);
       tree_->Branch("lep1",    "TLorentzVector", &lep1Ptr);
+      */
     }
   
     if (treeType == kTreeType_Dilepton_Full
 	|| treeType == kTreeType_TightPlusVetoLepton_Full
 	) {
+      tree_->Branch("lep1Type",&lep1Type,"lep1Type/I");
+      tree_->Branch("lep2Type",&lep2Type,"lep2Type/I");
+      tree_->Branch("mll",&mll,"mll/F");      
+      tree_->Branch("lep1",    "TLorentzVector", &lep1Ptr);
+      tree_->Branch("lep2",    "TLorentzVector", &lep2Ptr);
+        /*
       tree_->Branch("NPU_Minus1",&NPU_Minus1,"NPU_Minus1/i");
       tree_->Branch("NPU_Plus1",&NPU_Plus1,"NPU_Plus1/i");
       tree_->Branch("event",&event,"event/i");
       tree_->Branch("processID",&processID,"processID/i");
       tree_->Branch("HLTDecision",&HLTDecision,"HLTDecision[300]/O");
       tree_->Branch("genlep1Type",&genlep1Type,"genlep1Type/I");
-      tree_->Branch("lep1Type",&lep1Type,"lep1Type/I");
       tree_->Branch("lep1MatchedGenLepIndex",&lep1MatchedGenLepIndex,"lep1MatchedGenLepIndex/I");
       tree_->Branch("genlep2Type",&genlep2Type,"genlep2Type/I");
-      tree_->Branch("lep2Type",&lep2Type,"lep2Type/I");
       tree_->Branch("lep2MatchedGenLepIndex",&lep2MatchedGenLepIndex,"lep2MatchedGenLepIndex/I");
       tree_->Branch("lep1PassVeto",&lep1PassVeto,"lep1PassVeto/O");
       tree_->Branch("lep1PassLoose",&lep1PassLoose,"lep1PassLoose/O");
@@ -844,7 +881,6 @@ class ControlSampleEvents {
       tree_->Branch("jet2PassCSVMedium",&jet2PassCSVMedium,"jet2PassCSVMedium/O");
       tree_->Branch("jet2PassCSVTight",&jet2PassCSVTight,"jet2PassCSVTight/O");
       tree_->Branch("lep1MT",&lep1MT,"lep1MT/F");
-      tree_->Branch("mll",&mll,"mll/F");      
       tree_->Branch("MET",&MET,"MET/F");
       tree_->Branch("METPhi",&METPhi,"METPhi/F");
       tree_->Branch("METnoHF", &METnoHF, "METnoHF/F");
@@ -857,17 +893,17 @@ class ControlSampleEvents {
       tree_->Branch("genZphi",&genZphi,"genZphi/F");
       tree_->Branch("genlep1", "TLorentzVector", &genlep1Ptr);
       tree_->Branch("genlep2", "TLorentzVector", &genlep2Ptr);
-      tree_->Branch("lep1",    "TLorentzVector", &lep1Ptr);
-      tree_->Branch("lep2",    "TLorentzVector", &lep2Ptr);
       tree_->Branch("bjet1",   "TLorentzVector", &bjet1Ptr);
       tree_->Branch("bjet2",   "TLorentzVector", &bjet2Ptr);
       tree_->Branch("jet1",    "TLorentzVector", &jet1Ptr);
       tree_->Branch("jet2",    "TLorentzVector", &jet2Ptr);
+      */
     }
 
     if (treeType == kTreeType_OneLeptonAdd2MET_Full ) {
       tree_->Branch("lep1",    "TLorentzVector", &lep1Ptr);
       tree_->Branch("lep1Type", &lep1Type, "lep1Type/I");
+    /*
       tree_->Branch("lep1PassVeto",&lep1PassVeto,"lep1PassVeto/O");
       tree_->Branch("lep1PassLoose",&lep1PassLoose,"lep1PassLoose/O");
       tree_->Branch("lep1PassMedium",&lep1PassMedium,"lep1PassMedium/O");
@@ -880,13 +916,19 @@ class ControlSampleEvents {
       tree_->Branch("muonRecoEffWeight",&muonRecoEffWeight,"muonRecoEffWeight/F");
       tree_->Branch("MET",&MET,"MET/F");
       tree_->Branch("METPhi",&METPhi,"METPhi/F");
+      */
       tree_->Branch("MR_NoW",&MR_NoW,"MR_NoW/F");
+      tree_->Branch("leadingJetPt_NoW",&leadingJetPt_NoW,"leadingJetPt_NoW/F");
+      tree_->Branch("subleadingJetPt_NoW",&subleadingJetPt_NoW,"subleadingJetPt_NoW/F");
       tree_->Branch("Rsq_NoW",&Rsq_NoW,"Rsq_NoW/F");
       tree_->Branch("MET_NoW",&MET_NoW,"MET_NoW/F");
       tree_->Branch("METPhi_NoW",&METPhi_NoW,"METPhi_NoW/F");
+      tree_->Branch("MT2_NoW",&MT2_NoW,"MT2_NoW/F");
+      tree_->Branch("alphaT_NoW",&alphaT_NoW,"alphaT_NoW/F");
       tree_->Branch("HT_NoW",&HT_NoW,"HT_NoW/F");
       tree_->Branch("dPhiRazor_NoW",&dPhiRazor_NoW,"dPhiRazor_NoW/F");
       tree_->Branch("nJets_NoW",&nJets_NoW,"nJets_NoW/i");
+      /*
       tree_->Branch("nJets80_NoW",&nJets80_NoW,"nJets80_NoW/i");
       tree_->Branch("nVetoMuons",&nVetoMuons,"nVetoMuons/i");
       tree_->Branch("nLooseMuons",&nLooseMuons,"nLooseMuons/i");
@@ -898,7 +940,7 @@ class ControlSampleEvents {
       tree_->Branch("genWphi",&genWphi,"genWphi/F");
       tree_->Branch("recoWpt",&recoWpt,"recoWpt/F");
       tree_->Branch("recoWphi",&recoWphi,"recoWphi/F");
-      tree_->Branch("HLTDecision",&HLTDecision,"HLTDecision[300]/O");
+      */
     }
   
     if (treeType == kTreeType_DileptonAdd2MET_Full ) {
@@ -906,6 +948,7 @@ class ControlSampleEvents {
       tree_->Branch("lep2",    "TLorentzVector", &lep2Ptr);
       tree_->Branch("lep1Type",&lep1Type,"lep1Type/I");
       tree_->Branch("lep2Type",&lep2Type,"lep2Type/I");
+      /*
       tree_->Branch("lep1PassVeto",&lep1PassVeto,"lep1PassVeto/O");
       tree_->Branch("lep1PassLoose",&lep1PassLoose,"lep1PassLoose/O");
       tree_->Branch("lep1PassMedium",&lep1PassMedium,"lep1PassMedium/O");
@@ -924,17 +967,26 @@ class ControlSampleEvents {
       tree_->Branch("u1",&u1,"u1/F");
       tree_->Branch("u2",&u2,"u2/F");
       tree_->Branch("METPhi",&METPhi,"METPhi/F");
+      */
       tree_->Branch("MR_NoZ",&MR_NoZ,"MR_NoZ/F");
+      tree_->Branch("leadingJetPt_NoZ",&leadingJetPt_NoZ,"leadingJetPt_NoZ/F");
+      tree_->Branch("subleadingJetPt_NoZ",&subleadingJetPt_NoZ,"subleadingJetPt_NoZ/F");
+      tree_->Branch("MT2_NoZ",&MT2_NoZ,"MT2_NoZ/F");
+      tree_->Branch("alphaT_NoZ",&alphaT_NoZ,"alphaT_NoZ/F");
       tree_->Branch("Rsq_NoZ",&Rsq_NoZ,"Rsq_NoZ/F");
       tree_->Branch("MET_NoZ",&MET_NoZ,"MET_NoZ/F");
       tree_->Branch("METPhi_NoZ",&METPhi_NoZ,"METPhi_NoZ/F");
       tree_->Branch("HT_NoZ",&HT_NoZ,"HT_NoZ/F");
       tree_->Branch("dPhiRazor_NoZ",&dPhiRazor_NoZ,"dPhiRazor_NoZ/F");
+      
+      /*
       tree_->Branch("recoZmass",&recoZmass,"recoZmass/F");
       tree_->Branch("recoZpt",&recoZpt,"recoZpt/F");
       tree_->Branch("genZpt",&genZpt,"genZpt/F");
       tree_->Branch("genZphi",&genZphi,"genZphi/F");
+      */
       tree_->Branch("nJets_NoZ",&nJets_NoZ,"nJets_NoZ/i");
+      /*
       tree_->Branch("nJets80_NoZ",&nJets80_NoZ,"nJets80_NoZ/i");
       tree_->Branch("nVetoMuons",&nVetoMuons,"nVetoMuons/i");
       tree_->Branch("nLooseMuons",&nLooseMuons,"nLooseMuons/i");
@@ -942,29 +994,35 @@ class ControlSampleEvents {
       tree_->Branch("nTightMuons",&nTightMuons,"nTightMuons/i");
       tree_->Branch("HLT_Dimuon",&HLT_Dimuon,"HLT_Dimuon/O");
       tree_->Branch("HLTDecision",&HLTDecision,"HLTDecision[300]/O");
+      */
     }
     
     // fill the photon tree
     if (treeType == kTreeType_Photon_Full) {
+      tree_->Branch("pho1","TLorentzVector", &pho1Ptr);
+        /*
       tree_->Branch("HLTDecision",&HLTDecision,"HLTDecision[300]/O");
       tree_->Branch("HLTPrescale",&HLTPrescale,"HLTPrescale[300]/I");
       tree_->Branch("pho1HLTFilter",&pho1HLTFilter,"HLTDecision[50]/O");
-      tree_->Branch("pho1","TLorentzVector", &pho1Ptr);
       tree_->Branch("pho2","TLorentzVector", &pho2Ptr);
       tree_->Branch("jet1",    "TLorentzVector", &jet1Ptr);
       tree_->Branch("jet2",    "TLorentzVector", &jet2Ptr);
-	  
+	  */
       tree_->Branch("MR_NoPho",&MR_NoPho,"MR_NoPho/F");
+      tree_->Branch("leadingJetPt_NoPho",&leadingJetPt_NoPho,"leadingJetPt_NoPho/F");
+      tree_->Branch("subleadingJetPt_NoPho",&subleadingJetPt_NoPho,"subleadingJetPt_NoPho/F");
+      tree_->Branch("MT2_NoPho",&MT2_NoPho,"MT2_NoPho/F");
+      tree_->Branch("alphaT_NoPho",&alphaT_NoPho,"alphaT_NoPho/F");
       tree_->Branch("Rsq_NoPho",&Rsq_NoPho,"Rsq_NoPho/F");
       tree_->Branch("MET_NoPho",&MET_NoPho,"MET_NoPho/F");
       tree_->Branch("METPhi_NoPho",&METPhi_NoPho,"METPhi_NoPho/F");
       tree_->Branch("HT_NoPho",&HT_NoPho,"HT_NoPho/F");
       tree_->Branch("dPhiRazor_NoPho",&dPhiRazor_NoPho,"dPhiRazor_NoPho/F");
       tree_->Branch("nJets_NoPho",&nJets_NoPho,"nJets_NoPho/i");
+      /*
       tree_->Branch("nJets80_NoPho",&nJets80_NoPho,"nJets80_NoPho/i");
 
       tree_->Branch("nSelectedPhotons",&nSelectedPhotons,"nSelectedPhotons/i");
-      tree_->Branch("nJets_NoPho",&nJets_NoPho,"nJets_NoPho/i");
       tree_->Branch("nJets80_NoPho",&nJets80_NoPho,"nJets80_NoPho/i");
       tree_->Branch("pho1_motherID",&pho1_motherID,"pho1_motherID/I");
       tree_->Branch("pho1_sigmaietaieta",&pho1_sigmaietaieta,"pho1_sigmaietaieta/F");
@@ -978,6 +1036,7 @@ class ControlSampleEvents {
 
       tree_->Branch("genJetHT",&genJetHT,"genJetHT/F");
       tree_->Branch("genJetMR",&genJetMR,"genJetMR/F");
+      */
     }  
   }
   
@@ -992,26 +1051,42 @@ class ControlSampleEvents {
     Int_t currentState = gErrorIgnoreLevel;
 
     tree_->SetBranchAddress("option",&option);
-    tree_->SetBranchAddress("genWeight",&genWeight);
+    //tree_->SetBranchAddress("genWeight",&genWeight);
     tree_->SetBranchAddress("weight",&weight);
+    /*
     tree_->SetBranchAddress("pileupWeight",&pileupWeight);
     tree_->SetBranchAddress("btagW",&btagW);
     tree_->SetBranchAddress("btagW_up",&btagW_up);
     tree_->SetBranchAddress("btagW_down",&btagW_down);
+    */
     tree_->SetBranchAddress("run",&run);
     tree_->SetBranchAddress("lumi",&lumi);
-    tree_->SetBranchAddress("NPU_0",&NPU_0);
-    tree_->SetBranchAddress("NPV",&NPV);
+    //tree_->SetBranchAddress("NPU_0",&NPU_0);
+    //tree_->SetBranchAddress("NPV",&NPV);
     tree_->SetBranchAddress("MR",&MR);
     tree_->SetBranchAddress("Rsq",&Rsq);
+    tree_->SetBranchAddress("dPhiRazor",&dPhiRazor);
+    tree_->SetBranchAddress("dPhiMinJetMET",&dPhiMinJetMET);
     tree_->SetBranchAddress("nSelectedJets",&nSelectedJets);
-    tree_->SetBranchAddress("nJets80",&nJets80);
-    tree_->SetBranchAddress("nGenBJets",&nGenBJets);
-    tree_->SetBranchAddress("nBJetsLoose",&nBJetsLoose);
+    //tree_->SetBranchAddress("nJets80",&nJets80);
+    //tree_->SetBranchAddress("nGenBJets",&nGenBJets);
+    //tree_->SetBranchAddress("nBJetsLoose",&nBJetsLoose);
     tree_->SetBranchAddress("nBJetsMedium",&nBJetsMedium);
-    tree_->SetBranchAddress("nBJetsTight",&nBJetsTight);
-    tree_->SetBranchAddress("genHT",&genHT);
-    tree_->SetBranchAddress("NISRJets",&NISRJets);
+    //tree_->SetBranchAddress("nBJetsTight",&nBJetsTight);
+    //tree_->SetBranchAddress("genHT",&genHT);
+    //tree_->SetBranchAddress("NISRJets",&NISRJets);
+    tree_->SetBranchAddress("lep1MT",&lep1MT);	
+    tree_->SetBranchAddress("MET",&MET);
+    tree_->SetBranchAddress("METPhi",&METPhi);
+    tree_->SetBranchAddress("HT",&HT);
+    tree_->SetBranchAddress("HLTDecision",&HLTDecision);
+    tree_->SetBranchAddress("lep1Pt",&lep1Pt);
+    tree_->SetBranchAddress("MHT",&MHT);
+    tree_->SetBranchAddress("dPhiRazor",&dPhiRazor);
+    tree_->SetBranchAddress("HT",&HT);
+    tree_->SetBranchAddress("jet1MT",&jet1MT);
+    tree_->SetBranchAddress("leadingJetPt",&leadingJetPt);
+    tree_->SetBranchAddress("subleadingJetPt",&subleadingJetPt);
 
     if (use_full_tree)
     {
@@ -1042,7 +1117,7 @@ class ControlSampleEvents {
 	) {
       tree_->SetBranchStatus("*", 0);
       tree_->SetBranchStatus("lep1Type", 1);
-      tree_->SetBranchStatus("lep1PassTight", 1);
+      tree_->SetBranchStatus("lep1PassTight", 0);
       tree_->SetBranchStatus("lep1MT", 1);
       tree_->SetBranchStatus("lep1Pt", 1);
       tree_->SetBranchStatus("lep1Eta", 1);
@@ -1070,22 +1145,15 @@ class ControlSampleEvents {
       tree_->SetBranchAddress("lep1PassMedium",&lep1PassMedium);
       tree_->SetBranchAddress("lep1PassTight",&lep1PassTight);
       tree_->SetBranchAddress("lep1MatchedGenLepIndex",&lep1MatchedGenLepIndex);
-      tree_->SetBranchAddress("lep1MT",&lep1MT);	
       tree_->SetBranchAddress("topPtWeight", &topPtWeight);
       tree_->SetBranchAddress("trigWeight1L", &trigWeight1L);
       tree_->SetBranchAddress("eleEffWeight", &eleEffWeight);
       tree_->SetBranchAddress("muonEffWeight", &muonEffWeight);
-      tree_->SetBranchAddress("eleRecoEffWeight", &eleRecoEffWeight);
-      tree_->SetBranchAddress("muonRecoEffWeight", &muonRecoEffWeight);
-      tree_->SetBranchAddress("MET",&MET);
-      tree_->SetBranchAddress("METPhi",&METPhi);
-      tree_->SetBranchAddress("METnoHF",&METnoHF);
-      tree_->SetBranchAddress("HT",&HT);
-      tree_->SetBranchAddress("HLTDecision",&HLTDecision);
-      tree_->SetBranchAddress("lep1Pt",&lep1Pt);
       tree_->SetBranchAddress("lep1Eta",&lep1Eta);
-      tree_->SetBranchAddress("MHT",&MHT);
+      tree_->SetBranchAddress("eleRecoEffWeight", &eleRecoEffWeight);
+      tree_->SetBranchAddress("METnoHF",&METnoHF);
       tree_->SetBranchAddress("MHTnoHF",&MHTnoHF);
+      tree_->SetBranchAddress("muonRecoEffWeight", &muonRecoEffWeight);
       tree_->SetBranchAddress("lep1" ,&lep1Ptr);
    }
 
@@ -1094,13 +1162,15 @@ class ControlSampleEvents {
 	|| treeType == kTreeType_OneVetoLepton_Full
 	|| treeType == kTreeType_OneTauLepton_Full
 	) {
+      tree_->SetBranchAddress("lep1Type",&lep1Type);
+      tree_->SetBranchAddress("lep1",     &lep1Ptr);
+    /*
       tree_->SetBranchAddress("NPU_Minus1",&NPU_Minus1);
       tree_->SetBranchAddress("NPU_Plus1",&NPU_Plus1);
       tree_->SetBranchAddress("event",&event);
       tree_->SetBranchAddress("processID",&processID);
       tree_->SetBranchAddress("HLTDecision",&HLTDecision);
       tree_->SetBranchAddress("genlep1Type",&genlep1Type);
-      tree_->SetBranchAddress("lep1Type",&lep1Type);
       tree_->SetBranchAddress("lep1PassVeto",&lep1PassVeto);
       tree_->SetBranchAddress("lep1PassLoose",&lep1PassLoose);
       tree_->SetBranchAddress("lep1PassMedium",&lep1PassMedium);
@@ -1132,30 +1202,33 @@ class ControlSampleEvents {
       tree_->SetBranchAddress("jet2PassCSVLoose",&jet2PassCSVLoose);
       tree_->SetBranchAddress("jet2PassCSVMedium",&jet2PassCSVMedium);
       tree_->SetBranchAddress("jet2PassCSVTight",&jet2PassCSVTight);
-      tree_->SetBranchAddress("dPhiRazor",&dPhiRazor);
-      tree_->SetBranchAddress("HT",&HT);
       tree_->SetBranchAddress("genWpt",&genWpt);
       tree_->SetBranchAddress("genWphi",&genWphi);
       tree_->SetBranchAddress("genWpt",  &genWpt);
       tree_->SetBranchAddress("genWphi",  &genWphi);
       tree_->SetBranchAddress("genlep1",  &genlep1Ptr);
-      tree_->SetBranchAddress("lep1",     &lep1Ptr);
       tree_->SetBranchAddress("bjet1",    &bjet1Ptr);
       tree_->SetBranchAddress("bjet2",    &bjet2Ptr);
       tree_->SetBranchAddress("jet1",     &jet1Ptr);
       tree_->SetBranchAddress("jet2",     &jet2Ptr);
+      */
     }
   
     if (treeType == kTreeType_Dilepton_Full
 	|| treeType == kTreeType_TightPlusVetoLepton_Full
 	) {
+      tree_->SetBranchAddress("lep1Type",&lep1Type);
+      tree_->SetBranchAddress("lep2Type",&lep2Type);
+      tree_->SetBranchAddress("mll",&mll);
+      tree_->SetBranchAddress("lep1",     &lep1Ptr);
+      tree_->SetBranchAddress("lep2",     &lep2Ptr);
+        /*
       tree_->SetBranchAddress("NPU_Minus1",&NPU_Minus1);
       tree_->SetBranchAddress("NPU_Plus1",&NPU_Plus1);
       tree_->SetBranchAddress("event",&event);
       tree_->SetBranchAddress("processID",&processID);
       tree_->SetBranchAddress("HLTDecision",&HLTDecision);
       tree_->SetBranchAddress("genlep1Type",&genlep1Type);
-      tree_->SetBranchAddress("lep1Type",&lep1Type);
       tree_->SetBranchAddress("lep1MatchedGenLepIndex",&lep1MatchedGenLepIndex);
       tree_->SetBranchAddress("genlep2Type",&genlep2Type);
       tree_->SetBranchAddress("lep2Type",&lep2Type);
@@ -1207,7 +1280,6 @@ class ControlSampleEvents {
       tree_->SetBranchAddress("jet2PassCSVMedium",&jet2PassCSVMedium);
       tree_->SetBranchAddress("jet2PassCSVTight",&jet2PassCSVTight);
       tree_->SetBranchAddress("lep1MT",&lep1MT);
-      tree_->SetBranchAddress("mll",&mll);
       tree_->SetBranchAddress("MET",&MET);
       tree_->SetBranchAddress("METPhi",&METPhi);
       tree_->SetBranchAddress("METnoHF",&METnoHF);
@@ -1220,35 +1292,40 @@ class ControlSampleEvents {
       tree_->SetBranchAddress("genZphi",&genZphi);
       tree_->SetBranchAddress("genlep1",  &genlep1Ptr);
       tree_->SetBranchAddress("genlep2",  &genlep2Ptr);
-      tree_->SetBranchAddress("lep1",     &lep1Ptr);
-      tree_->SetBranchAddress("lep2",     &lep2Ptr);
       tree_->SetBranchAddress("bjet1",    &bjet1Ptr);
       tree_->SetBranchAddress("bjet2",    &bjet2Ptr);
       tree_->SetBranchAddress("jet1",     &jet1Ptr);
       tree_->SetBranchAddress("jet2",     &jet2Ptr);
+      */
     }
 
 
 
     if (treeType == kTreeType_OneLeptonAdd2MET_Full ) {
-      tree_->SetBranchAddress("lep1",&lep1Ptr);
+      
+      tree_->SetBranchAddress("lep1",&lep1Ptr); 
       tree_->SetBranchAddress("lep1Type",&lep1Type);
+    /*  
       tree_->SetBranchAddress("topPtWeight", &topPtWeight);
       tree_->SetBranchAddress("trigWeight1L", &trigWeight1L);
       tree_->SetBranchAddress("eleEffWeight", &eleEffWeight);
       tree_->SetBranchAddress("muonEffWeight", &muonEffWeight);
       tree_->SetBranchAddress("eleRecoEffWeight", &eleRecoEffWeight);
       tree_->SetBranchAddress("muonRecoEffWeight", &muonRecoEffWeight);
+     */
       tree_->SetBranchAddress("MR_NoW", &MR_NoW);
+      tree_->SetBranchAddress("leadingJetPt_NoW", &leadingJetPt_NoW);
+      tree_->SetBranchAddress("subleadingJetPt_NoW", &subleadingJetPt_NoW);
       tree_->SetBranchAddress("Rsq_NoW",&Rsq_NoW);
-      tree_->SetBranchAddress("MET",&MET);
-      tree_->SetBranchAddress("METPhi",&METPhi);
       tree_->SetBranchAddress("MET_NoW",&MET_NoW);
       tree_->SetBranchAddress("METPhi_NoW",&METPhi_NoW);
       tree_->SetBranchAddress("HT_NoW",&HT_NoW);
       tree_->SetBranchAddress("dPhiRazor_NoW",&dPhiRazor_NoW);
       tree_->SetBranchAddress("nJets_NoW",&nJets_NoW);
+      /*
       tree_->SetBranchAddress("nJets80_NoW",&nJets80_NoW);
+      tree_->SetBranchAddress("MET",&MET);
+      tree_->SetBranchAddress("METPhi",&METPhi);
       tree_->SetBranchAddress("nVetoMuons",&nVetoMuons);
       tree_->SetBranchAddress("nLooseMuons",&nLooseMuons);
       tree_->SetBranchAddress("nMediumMuons",&nMediumMuons);
@@ -1260,6 +1337,7 @@ class ControlSampleEvents {
       tree_->SetBranchAddress("recoWpt",&recoWpt);
       tree_->SetBranchAddress("recoWphi",&recoWphi);
       tree_->SetBranchAddress("HLTDecision",&HLTDecision);
+      */
     }
 
     if (treeType == kTreeType_DileptonAdd2MET_Full ) {
@@ -1267,27 +1345,22 @@ class ControlSampleEvents {
       tree_->SetBranchAddress("lep2",          &lep2Ptr);
       tree_->SetBranchAddress("lep1Type",&lep1Type);
       tree_->SetBranchAddress("lep2Type",&lep2Type);
+      tree_->SetBranchAddress("mll",&mll);
+      /*
       tree_->SetBranchAddress("topPtWeight", &topPtWeight);
       tree_->SetBranchAddress("trigWeight1L", &trigWeight1L);
       tree_->SetBranchAddress("eleEffWeight", &eleEffWeight);
       tree_->SetBranchAddress("muonEffWeight", &muonEffWeight);
       tree_->SetBranchAddress("eleRecoEffWeight", &eleRecoEffWeight);
       tree_->SetBranchAddress("muonRecoEffWeight", &muonRecoEffWeight);
-      tree_->SetBranchAddress("MR_NoZ",        &MR_NoZ);
-      tree_->SetBranchAddress("Rsq_NoZ",       &Rsq_NoZ);
       tree_->SetBranchAddress("MET",	       &MET);
       tree_->SetBranchAddress("MET_NoZ",       &MET_NoZ);
-      tree_->SetBranchAddress("METPhi_NoZ",    &METPhi_NoZ);
       tree_->SetBranchAddress("u1",         &u1);
       tree_->SetBranchAddress("u2",         &u2);
-      tree_->SetBranchAddress("METPhi",         &METPhi);
-      tree_->SetBranchAddress("HT_NoZ",        &HT_NoZ);
-      tree_->SetBranchAddress("dPhiRazor_NoZ", &dPhiRazor_NoZ);
       tree_->SetBranchAddress("recoZmass",     &recoZmass);
       tree_->SetBranchAddress("recoZpt",       &recoZpt);
       tree_->SetBranchAddress("genZpt",        &genZpt);
       tree_->SetBranchAddress("genZphi",       &genZphi);
-      tree_->SetBranchAddress("nJets_NoZ",     &nJets_NoZ);
       tree_->SetBranchAddress("nJets80_NoZ",   &nJets80_NoZ);
       tree_->SetBranchAddress("nVetoMuons",    &nVetoMuons);
       tree_->SetBranchAddress("nLooseMuons",   &nLooseMuons);
@@ -1295,30 +1368,44 @@ class ControlSampleEvents {
       tree_->SetBranchAddress("nTightMuons",   &nTightMuons);
       tree_->SetBranchAddress("HLT_Dimuon",    &HLT_Dimuon);
       tree_->SetBranchAddress("HLTDecision",&HLTDecision);
+      */
+      tree_->SetBranchAddress("MR_NoZ",        &MR_NoZ);
+      tree_->SetBranchAddress("leadingJetPt_NoZ",        &leadingJetPt_NoZ);
+      tree_->SetBranchAddress("subleadingJetPt_NoZ",        &subleadingJetPt_NoZ);
+      tree_->SetBranchAddress("Rsq_NoZ",       &Rsq_NoZ);
+      tree_->SetBranchAddress("METPhi_NoZ",    &METPhi_NoZ);
+      tree_->SetBranchAddress("METPhi",         &METPhi);
+      tree_->SetBranchAddress("HT_NoZ",        &HT_NoZ);
+      tree_->SetBranchAddress("dPhiRazor_NoZ", &dPhiRazor_NoZ);
+      tree_->SetBranchAddress("nJets_NoZ",     &nJets_NoZ);
     }
 
     // fill the photon tree
     if (treeType == kTreeType_Photon_Full) {
+        /*
         tree_->SetBranchAddress("HLTDecision",&HLTDecision);
         tree_->SetBranchAddress("HLTPrescale",&HLTPrescale);
         tree_->SetBranchAddress("pho1HLTFilter",&pho1HLTFilter);
-        tree_->SetBranchAddress("pho1", &pho1Ptr);
         tree_->SetBranchAddress("pho2", &pho2Ptr);
         tree_->SetBranchAddress("jet1" ,&jet1Ptr);
         tree_->SetBranchAddress("jet2" ,&jet2Ptr);
-
+        */
+        tree_->SetBranchAddress("pho1", &pho1Ptr);
         tree_->SetBranchAddress("MR_NoPho",&MR_NoPho);
+        tree_->SetBranchAddress("leadingJetPt_NoPho",&leadingJetPt_NoPho);
+        tree_->SetBranchAddress("subleadingJetPt_NoPho",&subleadingJetPt_NoPho);
         tree_->SetBranchAddress("Rsq_NoPho",&Rsq_NoPho);
         tree_->SetBranchAddress("MET_NoPho",&MET_NoPho);
         tree_->SetBranchAddress("METPhi_NoPho",&METPhi_NoPho);
         tree_->SetBranchAddress("HT_NoPho",&HT_NoPho);
         tree_->SetBranchAddress("dPhiRazor_NoPho",&dPhiRazor_NoPho);
-      tree_->SetBranchAddress("nJets_NoPho",&nJets_NoPho);
-      tree_->SetBranchAddress("nJets80_NoPho",&nJets80_NoPho);
-
+        tree_->SetBranchAddress("nJets_NoPho",&nJets_NoPho);
+/*
+        tree_->SetBranchAddress("nJets80_NoPho",&nJets80_NoPho);
       tree_->SetBranchAddress("nSelectedPhotons",&nSelectedPhotons);
       tree_->SetBranchAddress("nJets_NoPho",&nJets_NoPho);
       tree_->SetBranchAddress("nJets80_NoPho",&nJets80_NoPho);
+      */
       tree_->SetBranchAddress("pho1_motherID",&pho1_motherID);
       tree_->SetBranchAddress("pho1_sigmaietaieta",&pho1_sigmaietaieta);
       tree_->SetBranchAddress("pho1_chargediso",&pho1_chargediso);
@@ -1328,8 +1415,10 @@ class ControlSampleEvents {
       tree_->SetBranchAddress("pho1_pfiso",&pho1_pfiso);
       tree_->SetBranchAddress("pho1PassTight",&pho1PassTight);
       tree_->SetBranchAddress("minDRGenPhotonToParton",&minDRGenPhotonToParton);
+      /*
       tree_->SetBranchAddress("genJetMR",&genJetMR);
       tree_->SetBranchAddress("genJetHT",&genJetHT);     
+      */
     }
     
     gErrorIgnoreLevel = currentState;

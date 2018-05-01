@@ -1,0 +1,10 @@
+SMS-T2qq_900_850 /eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/SignalFastsim/SMS-T2qq_900_850.root
+SMS-T2qq_850_800 /eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/SignalFastsim/SMS-T2qq_850_800.root
+SMS-T2qq_800_750 /eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/SignalFastsim/SMS-T2qq_800_750.root
+SMS-T2qq_750_700 /eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/SignalFastsim/SMS-T2qq_750_700.root
+SMS-T2qq_700_650 /eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/SignalFastsim/SMS-T2qq_700_650.root
+SMS-T2qq_650_600 /eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/SignalFastsim/SMS-T2qq_650_600.root
+SMS-T2qq_600_550 /eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/SignalFastsim/SMS-T2qq_600_550.root
+SMS-T2qq_550_500 /eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/SignalFastsim/SMS-T2qq_550_500.root
+SMS-T2qq_500_450 /eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/SignalFastsim/SMS-T2qq_500_450.root
+SMS-T2qq_450_400 /eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/SignalFastsim/SMS-T2qq_450_400.root

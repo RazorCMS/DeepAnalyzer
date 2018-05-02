@@ -647,9 +647,9 @@ class ControlSampleEvents {
     tree_->Branch("nBJetsLoose",&nBJetsLoose,"nBJetsLoose/i");
     */
     tree_->Branch("nBJetsMedium",&nBJetsMedium,"nBJetsMedium/i");
+    tree_->Branch("genHT",&genHT,"genHT/F");
     /*
     tree_->Branch("nBJetsTight",&nBJetsTight,"nBJetsTight/i");
-    tree_->Branch("genHT",&genHT,"genHT/F");
     tree_->Branch("NISRJets",&NISRJets,"NISRJets/I");
     tree_->Branch("nWTags", &nWTags, "nWTags/I");
     tree_->Branch("nTopTags", &nTopTags, "nTopTags/I");
@@ -1073,7 +1073,7 @@ class ControlSampleEvents {
     //tree_->SetBranchAddress("nBJetsLoose",&nBJetsLoose);
     tree_->SetBranchAddress("nBJetsMedium",&nBJetsMedium);
     //tree_->SetBranchAddress("nBJetsTight",&nBJetsTight);
-    //tree_->SetBranchAddress("genHT",&genHT);
+    tree_->SetBranchAddress("genHT",&genHT);
     //tree_->SetBranchAddress("NISRJets",&NISRJets);
     tree_->SetBranchAddress("lep1MT",&lep1MT);	
     tree_->SetBranchAddress("MET",&MET);

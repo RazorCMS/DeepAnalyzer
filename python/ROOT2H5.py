@@ -277,8 +277,10 @@ def saveh5(sample,loca,box=1, cr = None):
     #SAVEDIR = '/eos/cms/store/group/dpg_hcal/comm_hcal/qnguyen/H5CR/OR_CUT/1BTagged/'
     #SAVEDIR = '/eos/cms/store/group/dpg_hcal/comm_hcal/qnguyen/H5CR/OR_CUT/'
     #SAVEDIR = '/eos/cms/store/group/dpg_hcal/comm_hcal/qnguyen/H5SR/OR_CUT/'
-    #SAVEDIR = '/afs/cern.ch/work/q/qnguyen/public/DMAnalysis/CMSSW_9_2_7/src/DeepAnalyzer/python/H5SR'
-    SAVEDIR = '/afs/cern.ch/work/q/qnguyen/public/DMAnalysis/CMSSW_9_2_7/src/DeepAnalyzer/python/H5CR'
+    if cr == None:
+        SAVEDIR = '/afs/cern.ch/work/q/qnguyen/public/DMAnalysis/CMSSW_9_2_7/src/DeepAnalyzer/python/H5SR/'
+    else:
+        SAVEDIR = '/afs/cern.ch/work/q/qnguyen/public/DMAnalysis/CMSSW_9_2_7/src/DeepAnalyzer/python/H5CR/'
     if cr != None: SAVEDIR+=cr
     if box == 1:
         SAVEDIR += '/MonoJet/'
@@ -340,7 +342,7 @@ def saveh5(sample,loca,box=1, cr = None):
 
 parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument('-s','--sample', help='Sample to process (WJets, TTJets, Signal, etc.)', choices=['WJets','TTJets','Other','QCD','DYJets','SingleTop','ZInv','Signal'])
+group.add_argument('-s','--sample', help='Sample to process (WJets, TTJets, Signal, etc.)', choices=['WJets','TTJets','Other','QCD','DYJets','SingleTop','ZInv','Signal','Data'])
 group.add_argument('-a','--all', action='store_true', help='Run all samples')
 group.add_argument('-b','--background', action='store_true', help='Run all background')
 parser.add_argument('--region', help="Has to be one of ['Signal','1L0B','1L1B','1LInv','2L','2LInv','Photon','VetoL','VetoTau']")
@@ -350,6 +352,8 @@ parser.add_argument('--box', type=int, default=0, help='1: Monojet box. Else: Mu
 
 args = parser.parse_args()
 
+cr = None
+
 if args.test: 
     print("Using small test samples from SR")
     loca = 'test'
@@ -358,8 +362,6 @@ elif args.region == 'Signal':
     loca = 'file'
 elif args.region not in ['1L0B','1L1B','1LInv','2L','2LInv','Photon','VetoL','VetoTau']: 
     sys.exit("Please use a proper region name: has to be 1 of ['Signal','1L0B','1L1B','1LInv','2L','2LInv','Photon','VetoL','VetoTau']")
-
-cr = None
 else: # 1 of Control Region 
     print("Processing {} region".format(args.region))
     loca = args.region

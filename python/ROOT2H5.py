@@ -28,7 +28,6 @@ LOOSE_RAZOR = '((MR > 300 && Rsq > 0.15) || (MR > 1200 && Rsq > 0.1))'
 LOOSE_MHT = '(MHT > 150 && HT > 200)'
 LOOSE_MT2 = '(((HT > 800 && MET > 30) || (HT > 150 && MET > 150)) && (( MT2 > 100 || (MT2 > 300 && HT > 1200)) && nSelectedJets > 1))'
 
-
 #BASELINE_CUT = 'leadingJetPt>100 && HT > 100 && jet1MT > 100 && MET > 200 && MHT > 200 && MR > 200 && MT2 > 200 && Rsq > 0.2 &&' + TriggerCut
 BASELINE_CUT = '(' + BASELINE_MT2 + '||' + BASELINE_MHT + '||' + BASELINE_RAZOR + ')'
 LOOSE_CUT = '(' + LOOSE_MT2 + '||' + LOOSE_MHT + '||' + LOOSE_RAZOR + ')'
@@ -37,6 +36,11 @@ CUT_DIJET =  ' box==21 && subleadingJetPt>60 && nSelectedJets > 1 && nSelectedJe
 CUT_FOURJET =  ' box==21 && subleadingJetPt>60 && nSelectedJets > 3 && nSelectedJets < 7'
 CUT_SEVENJET =  ' box==21 && subleadingJetPt>60 && nSelectedJets > 6'
 CUT_MULTIJET =  ' subleadingJetPt>60' #&& box ==21 
+
+def xstr(s):
+    if s is None:
+        return ''
+    return str(s)
 
 def makeFileLists(inDir, smsName, OneDScan=False):
     """
@@ -154,7 +158,7 @@ SAMPLES['Data']['1L1B'] = CONTROL_DIR+'/OneLeptonFull/InclusiveControlRegion_One
 
 # Control region 1LInv
 SAMPLES['WJets']['1LInv'] = CONTROL_DIR+'/OneLeptonAddToMET/InclusiveControlRegion_OneLeptonAddToMetFull_SingleLeptonSkim_Razor2016_MoriondRereco_WJets_1pb_weighted.root'
-SAMPLES['TTJets']['1LInv'] = CONTROL_DIR+'/OneLeptonAddToMET/InclusiveControlRegion_OneLeptonAddToMetFull_SingleLeptonSkim_Razor2016_MoriondRereco_TTJets_1pb_weighted.root'
+SAMPLES['TTJets']['1LInv'] = CONTROL_DIR+'/OneLeptonAddToMET/InclusiveControlRegion_OneLeptonAddToMetFull_SingleLeptonSkim_Razor2016_MoriondRereco_TTJetsHTBinned_1pb_weighted.root'
 SAMPLES['Other']['1LInv'] = CONTROL_DIR+'/OneLeptonAddToMET/InclusiveControlRegion_OneLeptonAddToMetFull_SingleLeptonSkim_Razor2016_MoriondRereco_Other_1pb_weighted.root'
 SAMPLES['QCD']['1LInv'] = CONTROL_DIR+'/OneLeptonAddToMET/InclusiveControlRegion_OneLeptonAddToMetFull_SingleLeptonSkim_Razor2016_MoriondRereco_QCD_1pb_weighted.root'
 SAMPLES['DYJets']['1LInv'] = CONTROL_DIR+'/OneLeptonAddToMET/InclusiveControlRegion_OneLeptonAddToMetFull_SingleLeptonSkim_Razor2016_MoriondRereco_DYJets_1pb_weighted.root'
@@ -174,7 +178,7 @@ SAMPLES['Data']['2LInv'] = CONTROL_DIR+'/DileptonAddToMET/InclusiveControlRegion
 
 
 
-def convert(tree, sample='', box=1, start=None, stop=None, cr=None, saveReal=False):
+def convert(tree, sample='', box=1, start=None, stop=None, cr=None, saveReal=False, separatePhi=True):
     if box==1:
         print("Using monojet box")
         CUT = CUT_MONOJET
@@ -191,8 +195,11 @@ def convert(tree, sample='', box=1, start=None, stop=None, cr=None, saveReal=Fal
         print("Using multijet box")
         CUT = CUT_MULTIJET
     #NEvents = tree.GetEntries()
-    if cr == None: CUT += ' && ' + SignalTriggerCut + ' && ' + BASELINE_CUT
-    else: CUT += ' && ' + CRTriggerCut + ' && ' + LOOSE_CUT
+    if 'T2qq' not in sample:
+        if cr == None: CUT += ' && ' + SignalTriggerCut + ' && ' + BASELINE_CUT
+        else: CUT += ' && ' + CRTriggerCut + ' && ' + BASELINE_CUT
+    else: #T2qq doesn't have trigger
+        CUT += ' && ' + BASELINE_CUT
     print("Transforming {} events from {}".format(tree.GetEntries(), sample))
     if cr == '1L0B':
         CUT += ' && lep1MT < 100 && nBJetsMedium==0 && lep1MT > 30 && MET > 30'
@@ -237,6 +244,11 @@ def convert(tree, sample='', box=1, start=None, stop=None, cr=None, saveReal=Fal
 #        feature = tree2array(tree,
 #                branches = ['weight','alphaT','dPhiMinJetMET','dPhiRazor','HT','jet1MT','leadingJetCISV','leadingJetPt','MET','MHT','MR','MT2','nSelectedJets','Rsq','subleadingJetPt'],
 #                selection = CUT, start=start, stop=stop)
+    if separatePhi:
+        feature = tree2array(tree,
+                branches = ['weight','alphaT','HT','jet1MT','leadingJetCISV','leadingJetPt','MET','MHT','MR','MT2','nSelectedJets','Rsq','subleadingJetPt'],
+                selection = CUT, start=start, stop=stop)
+        separate = tree2array(tree, branches = ['dPhiMinJetMET','dPhiRazor'], selection=CUT, start=start, stop=stop)
 
     if 'T2qq' in sample:
         label = np.ones(shape=(feature.shape), dtype = [('label','f4')])
@@ -254,13 +266,19 @@ def convert(tree, sample='', box=1, start=None, stop=None, cr=None, saveReal=Fal
        
     data = nlr.merge_arrays([label,feature,ms,ml], flatten=True) 
     print("{} selected events converted to h5py".format(data.shape[0]))
-    return data
+    if separatePhi:
+        return data, separate
+    else:
+        return data
 
 def saveh5(sample,loca,box=1, cr = None):
     #SAVEDIR = '/eos/cms/store/group/phys_susy/razor/Run2Analysis/InclusiveSignalRegion/2016/V3p15_13Oct2017_Inclusive/h5/'
     #SAVEDIR = '/eos/cms/store/group/dpg_hcal/comm_hcal/qnguyen/OR_CUT/'
     #SAVEDIR = '/eos/cms/store/group/dpg_hcal/comm_hcal/qnguyen/H5CR/OR_CUT/1BTagged/'
-    SAVEDIR = '/eos/cms/store/group/dpg_hcal/comm_hcal/qnguyen/H5CR/OR_CUT/'
+    #SAVEDIR = '/eos/cms/store/group/dpg_hcal/comm_hcal/qnguyen/H5CR/OR_CUT/'
+    #SAVEDIR = '/eos/cms/store/group/dpg_hcal/comm_hcal/qnguyen/H5SR/OR_CUT/'
+    #SAVEDIR = '/afs/cern.ch/work/q/qnguyen/public/DMAnalysis/CMSSW_9_2_7/src/DeepAnalyzer/python/H5SR'
+    SAVEDIR = '/afs/cern.ch/work/q/qnguyen/public/DMAnalysis/CMSSW_9_2_7/src/DeepAnalyzer/python/H5CR'
     if cr != None: SAVEDIR+=cr
     if box == 1:
         SAVEDIR += '/MonoJet/'
@@ -286,10 +304,18 @@ def saveh5(sample,loca,box=1, cr = None):
     NEvents = _tree.GetEntries()
     segments = int(NEvents / 1e7)
     if segments < 2:
-        outh5 = h5py.File(SAVEDIR+'/'+sample+'.h5','w')
-        outh5['Data'] = convert(_tree, sample, box, cr=cr, saveReal=False)
-        if 'Inv' in cr: 
-            outh5['Data_Visible'] = convert(_tree, sample, box, cr=cr, saveReal=True)
+        try:
+            if os.path.isfile(SAVEDIR+'/'+sample+'.h5'):
+                print ("Remove old file")
+                os.remove(SAVEDIR+'/'+sample+'.h5')
+            outh5 = h5py.File(SAVEDIR+'/'+sample+'.h5','w')
+        except IOError as e:
+            print(e, SAVEDIR+'/'+sample+'.h5')
+            raise
+
+        outh5['Data'], outh5['Phi'] = convert(_tree, sample, box, cr=cr, saveReal=False, separatePhi=True)
+        if 'Inv' in xstr(cr): 
+            outh5['Data_Visible'],_ = convert(_tree, sample, box, cr=cr, saveReal=True, separatePhi=True)
         outh5.close()
         _file.Close()
         print("Save to {}".format(SAVEDIR+'/'+sample+'.h5'))
@@ -304,9 +330,9 @@ def saveh5(sample,loca,box=1, cr = None):
             stop = int((i+1)*1e7)
             if stop > NEvents: stop = NEvents
             outh5 = h5py.File(outname,'w')
-            outh5['Data'] = convert(_tree, sample, box, start, stop, cr = cr, saveReal=False)
-            if 'Inv' in cr:
-                outh5['Data_Visible'] = convert(_tree, sample, box, start, stop, cr = cr, saveReal=True)
+            outh5['Data'], outh5['Phi'] = convert(_tree, sample, box, start, stop, cr = cr, saveReal=False, separatePhi=True)
+            if 'Inv' in xstr(cr):
+                outh5['Data_Visible'], _ = convert(_tree, sample, box, start, stop, cr = cr, saveReal=True, separatePhi=True)
 
             outh5.close()
             print("Save to {}".format(outname))
@@ -317,7 +343,7 @@ group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('-s','--sample', help='Sample to process (WJets, TTJets, Signal, etc.)', choices=['WJets','TTJets','Other','QCD','DYJets','SingleTop','ZInv','Signal'])
 group.add_argument('-a','--all', action='store_true', help='Run all samples')
 group.add_argument('-b','--background', action='store_true', help='Run all background')
-group.add_argument('-c','--control', help='Run all control region background')
+parser.add_argument('--region', help="Has to be one of ['Signal','1L0B','1L1B','1LInv','2L','2LInv','Photon','VetoL','VetoTau']")
 parser.add_argument('-t','--test', action='store_true', help='Run a very small test sample')
 parser.add_argument('--box', type=int, default=0, help='1: Monojet box. Else: Multijet box.')
 
@@ -325,36 +351,35 @@ parser.add_argument('--box', type=int, default=0, help='1: Monojet box. Else: Mu
 args = parser.parse_args()
 
 if args.test: 
-    print("Using small test samples")
+    print("Using small test samples from SR")
     loca = 'test'
-elif args.control != None:
-    if args.control not in ['1L0B','1L1B','1LInv','2L','2LInv','Photon','VetoL','VetoTau']: sys.exit("Please use a proper control region name!")
-    loca = args.control
-else:
-    loca = 'file'
 
-if args.all: # 
-    print("Processing all files...")
-    for sample in SAMPLES:
-        saveh5(sample, loca, args.box)
-elif args.background:
+elif args.region == 'Signal':
+    loca = 'file'
+elif args.region not in ['1L0B','1L1B','1LInv','2L','2LInv','Photon','VetoL','VetoTau']: 
+    sys.exit("Please use a proper region name: has to be 1 of ['Signal','1L0B','1L1B','1LInv','2L','2LInv','Photon','VetoL','VetoTau']")
+
+cr = None
+else: # 1 of Control Region 
+    print("Processing {} region".format(args.region))
+    loca = args.region
+    cr = args.region
+
+if args.background:
     print("Processing all backgrounds...")
     for sample in SAMPLES:
         if "T2qq" not in sample:
-            saveh5(sample, loca, args.box)
-elif args.control is not None:
-    print("Processing all control region backgrounds...")
+            saveh5(sample, loca, args.box, cr=cr)
+elif args.all: 
+    print("Processing all samples...")
     for sample in SAMPLES:
-        if "T2qq" not in sample:
-#            if "Data" not in sample:
-            saveh5(sample, loca, args.box, cr=args.control)
+        saveh5(sample, loca, args.box, cr=cr)
 
-elif "Signal" in args.sample:
-    print("Processing Signal only...")
-    for sample in SAMPLES:
-        if "T2qq" in sample:
-            saveh5(sample, loca, args.box)
-else:
-    print("Processing {}...".format(args.sample)) 
-    saveh5(args.sample, loca, args.box)
-
+elif args.sample:
+    print("Processing {}".format(args.sample))
+    if "Signal" in args.sample:
+        for sample in SAMPLES:
+            if "T2qq" in sample:
+                saveh5(sample, loca, args.box, cr=cr)
+    else:
+        saveh5(args.sample, loca, args.box, cr=cr)

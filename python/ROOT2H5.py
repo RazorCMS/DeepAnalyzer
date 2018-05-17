@@ -302,8 +302,13 @@ def saveh5(sample,loca,box=1, cr = None):
     _file = rt.TFile.Open(SAMPLES[sample][loca])
     _treeName = 'InclusiveSignalRegion'
     if loca in ['1L0B','1L1B','2L','1LInv','2LInv','Photon','VetoL','VetoTau']: _treeName = "InclusiveControlRegion"
-    _tree = _file.Get(_treeName)
-    NEvents = _tree.GetEntries()
+    try:
+        _tree = _file.Get(_treeName)
+        NEvents = _tree.GetEntries()
+    except:
+        print("Problematic file: {}".format(SAMPLES[sample][loca]))
+        print("trying to read tree: {}".format(_treeName))
+        raise
     segments = int(NEvents / 1e7)
     if segments < 2:
         try:

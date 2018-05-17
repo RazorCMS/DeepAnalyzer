@@ -85,10 +85,14 @@ def sub_sequence(tag, isData=False, submit=False, label='', skipSub=False, force
             if isData:
                 zombieFileName = zombieFileName.replace(".txt","_Data.txt")
             with open(zombieFileName) as zombieFile:
-                if len(list(zombieFile)) > 0:
-                    content = zombieFile.read()
-                    print "Zombies detected. Start killing."
-                    for line in zombieFile:
+                #print(zombieFile.readlines())
+                zombies = zombieFile.readlines()
+                zombieFile.seek(0,0)
+                content = zombieFile.read()
+                nZB = len(zombies)
+                if nZB > 0:
+                    print ("{} zombie(s) detected. Start killing.".format(nZB))
+                    for line in zombies:
                         print "Removing {}".format(line)
                         line = line.replace('\n','')
                         os.remove(line)
